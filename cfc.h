@@ -21,6 +21,7 @@ typedef struct ccRenderer {
   GLuint cbo; // float r g b a
   GLuint ibo; // unsigned int
   GLuint shaderProgram;
+  GLenum renderMode;
   uint32_t *indices;
   float *vertices;
   float *colors;
@@ -29,6 +30,14 @@ typedef struct ccRenderer {
   size_t numColors;
   float color[4];
 } ccRenderer;
+
+typedef struct {
+  float *vertices;
+  float *colors;
+  uint32_t *indices;
+  size_t numVertices;
+  size_t numIndices;
+} ccGeometry;
 
 // GLOBALS
 
@@ -46,6 +55,9 @@ static const int CC_DEFAULT_WINDOW_HEIGHT = 800;
 static int CC_CURRENT_WINDOW_WIDTH = CC_DEFAULT_WINDOW_WIDTH;
 static int CC_CURRENT_WINDOW_HEIGHT = CC_DEFAULT_WINDOW_HEIGHT;
 static GLFWwindow *CC_MAIN_WINDOW;
+
+static uint64_t CC_CURRENT_FRAMENUM = 0;
+static float CC_CURRENT_FPS = 0.0;
 
 static mat4s CC_DEFAULT_PROJECTION_MATRIX;
 static mat4s CC_DEFAULT_VIEW_MATRIX;
@@ -96,11 +108,16 @@ void ccClearWindowU8(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
 void ccSetColor(float r, float g, float b, float a);
 void ccDrawTriangle(float x1, float y1, float z1, float x2, float y2, float z2,
                     float x3, float y3, float z3);
+void ccDrawGeometry(ccGeometry *geom);
+void ccSetDrawMode(GLenum mode);
 const char *ccReadFile(const char *filePath);
 GLuint ccLoadShader(const char *shaderPath, GLenum shaderType);
 GLuint ccLoadShaderFromSource(const char *shaderSource, GLenum shaderType);
 bool ccShaderCompileSuccess(const GLuint shader);
 const char *ccGetShaderInfoLog(const GLuint shader);
+/// Returns current frame number.
+uint64_t ccGetFrameNum();
+float ccGetFps();
 
 #ifndef CC_NO_MAIN
 
@@ -148,6 +165,7 @@ int main() {
       glGetUniformLocation(CC_MAIN_RENDERER.shaderProgram, "projection");
 
   setup();
+  float prevTime = glfwGetTime();
   while (!glfwWindowShouldClose(CC_MAIN_WINDOW)) {
     glUniformMatrix4fv(umodel, 1, GL_FALSE,
                        (float *)&CC_DEFAULT_MODEL_MATRIX.raw);
@@ -160,6 +178,10 @@ int main() {
     ccResetRendererData(&CC_MAIN_RENDERER);
     glfwSwapBuffers(CC_MAIN_WINDOW);
     glfwPollEvents();
+    CC_CURRENT_FRAMENUM++;
+    float frameTime = glfwGetTime();
+    CC_CURRENT_FPS = 1.0 / (frameTime - prevTime);
+    prevTime = frameTime;
   };
 
   glfwTerminate();
@@ -239,6 +261,47 @@ void ccDrawTriangle(float x1, float y1, float z1, float x2, float y2, float z2,
   CC_MAIN_RENDERER.numIndices += 3;
 }
 
+void ccDrawGeometry(ccGeometry *geom) {
+  size_t vertexSz = sizeof(float) * 3;
+  size_t curVerticesSz = CC_MAIN_RENDERER.numVertices * vertexSz;
+  size_t geomVerticesSz = geom->numVertices * vertexSz;
+  size_t newVerticesSz = curVerticesSz + geomVerticesSz;
+  float *newVertices = (float *)malloc(newVerticesSz);
+  memcpy(newVertices, CC_MAIN_RENDERER.vertices, curVerticesSz);
+  memcpy(&newVertices[CC_MAIN_RENDERER.numVertices * 3], geom->vertices,
+         geomVerticesSz);
+  free(CC_MAIN_RENDERER.vertices);
+  CC_MAIN_RENDERER.vertices = newVertices;
+  CC_MAIN_RENDERER.numVertices += geom->numVertices;
+
+  size_t colorSz = sizeof(float) * 4;
+  size_t curColorsSz = CC_MAIN_RENDERER.numColors * colorSz;
+  size_t geomColorsSz = geom->numVertices * colorSz;
+  size_t newColorsSz = curColorsSz + geomColorsSz;
+  float *newColors = (float *)malloc(newColorsSz);
+  memcpy(newColors, CC_MAIN_RENDERER.colors, curColorsSz);
+  memcpy(&newColors[CC_MAIN_RENDERER.numColors * 4], geom->colors,
+         geomColorsSz);
+  free(CC_MAIN_RENDERER.colors);
+  CC_MAIN_RENDERER.colors = newColors;
+  CC_MAIN_RENDERER.numColors += CC_MAIN_RENDERER.numVertices;
+
+  size_t curIndicesSz = CC_MAIN_RENDERER.numIndices * sizeof(uint32_t);
+  size_t geomIndicesSz = geom->numIndices * sizeof(uint32_t);
+  size_t newIndicesSz = curIndicesSz + geomIndicesSz;
+  uint32_t *newIndices = (uint32_t *)malloc(newIndicesSz);
+  memcpy(newIndices, CC_MAIN_RENDERER.indices, curIndicesSz);
+  for (size_t i = 0; i < geom->numIndices; i++) {
+    newIndices[i + CC_MAIN_RENDERER.numIndices] =
+        geom->indices[i] + CC_MAIN_RENDERER.numVertices - geom->numIndices;
+  }
+  free(CC_MAIN_RENDERER.indices);
+  CC_MAIN_RENDERER.indices = newIndices;
+  CC_MAIN_RENDERER.numIndices += geom->numIndices;
+};
+
+void ccSetDrawMode(GLenum mode) { CC_MAIN_RENDERER.renderMode = mode; };
+
 const char *ccReadFile(const char *filePath) {
   FILE *file = fopen(filePath, "rb");
   if (!file) {
@@ -309,6 +372,7 @@ void ccCreateMainRenderer(ccRenderer *renderer) {
   for (size_t i = 0; i < 4; i++) {
     renderer->color[i] = 1.0;
   }
+  renderer->renderMode = GL_TRIANGLES;
 }
 
 void ccRenderData() {
@@ -334,7 +398,8 @@ void ccRenderData() {
 
   glBindVertexArray(CC_MAIN_RENDERER.vao);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, CC_MAIN_RENDERER.ibo);
-  glDrawElements(GL_TRIANGLES, CC_MAIN_RENDERER.numIndices, GL_UNSIGNED_INT, 0);
+  glDrawElements(CC_MAIN_RENDERER.renderMode, CC_MAIN_RENDERER.numIndices,
+                 GL_UNSIGNED_INT, 0);
 }
 
 void ccResetRendererData(ccRenderer *renderer) {
@@ -358,5 +423,9 @@ const char *ccGetShaderInfoLog(const GLuint shader) {
   glGetShaderInfoLog(shader, 512, NULL, buffer);
   return buffer;
 }
+
+uint64_t ccGetFrameNum() { return CC_CURRENT_FRAMENUM; }
+
+float ccGetFps() { return CC_CURRENT_FPS; };
 
 #endif // CC_HEADER
