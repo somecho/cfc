@@ -1,0 +1,3 @@
+#!/usr/bin/bash
+
+gcc -O3 "$1.c" -lglfw -lepoxy -Wall -o $1 && "./$1"

@@ -7,7 +7,6 @@
 
 // Dependency Headers
 #include <cglm/struct.h>
-
 #include <epoxy/gl.h>
 #include <epoxy/glx.h>
 
@@ -45,6 +44,8 @@ typedef struct ccRenderer {
 
 static const int CC_DEFAULT_WINDOW_WIDTH = 1200;
 static const int CC_DEFAULT_WINDOW_HEIGHT = 800;
+static int CC_CURRENT_WINDOW_WIDTH = CC_DEFAULT_WINDOW_WIDTH;
+static int CC_CURRENT_WINDOW_HEIGHT = CC_DEFAULT_WINDOW_HEIGHT;
 static GLFWwindow *CC_MAIN_WINDOW;
 
 static mat4s CC_DEFAULT_PROJECTION_MATRIX;
@@ -128,6 +129,9 @@ void ccSetWindowSize(int width, int height) {
   glfwSetWindowSize(CC_MAIN_WINDOW, width, height);
   // TODO: recenter window
 }
+
+int ccGetWidth() { return CC_CURRENT_WINDOW_WIDTH; }
+int ccGetHeight() { return CC_CURRENT_WINDOW_HEIGHT; }
 
 void ccClearWindow(float r, float g, float b, float a) {
   glClearColor(r, g, b, a);
@@ -322,16 +326,14 @@ int main() {
 
   ccCreateMainRenderer(&CC_MAIN_RENDERER);
 
-  setup();
-
   glUseProgram(CC_MAIN_RENDERER.shaderProgram);
   GLint umodel = glGetUniformLocation(CC_MAIN_RENDERER.shaderProgram, "model");
   GLint uview = glGetUniformLocation(CC_MAIN_RENDERER.shaderProgram, "view");
   GLint uprojection =
       glGetUniformLocation(CC_MAIN_RENDERER.shaderProgram, "projection");
 
+  setup();
   while (!glfwWindowShouldClose(CC_MAIN_WINDOW)) {
-    ccResetRendererData(&CC_MAIN_RENDERER);
     glUniformMatrix4fv(umodel, 1, GL_FALSE,
                        (float *)&CC_DEFAULT_MODEL_MATRIX.raw);
     glUniformMatrix4fv(uview, 1, GL_FALSE,
@@ -340,6 +342,7 @@ int main() {
                        (float *)&CC_DEFAULT_PROJECTION_MATRIX.raw);
     loop();
     ccRenderData();
+    ccResetRendererData(&CC_MAIN_RENDERER);
     glfwSwapBuffers(CC_MAIN_WINDOW);
     glfwPollEvents();
   };
