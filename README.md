@@ -9,8 +9,8 @@
 
 ## Running Examples
 ```sh
-./RunExamples examples/clear
-./RunExamples examples/triangle
+./run examples/clear
+./run examples/triangle
 ```
 
 [glfwlink]:https://github.com/glfw/glfw
