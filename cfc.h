@@ -28,7 +28,6 @@ typedef struct ccRenderer {
   size_t numVertices;
   size_t numColors;
   float color[4];
-
 } ccRenderer;
 
 // GLOBALS
@@ -76,11 +75,7 @@ const char *CC_DEFAULT_FRAGMENT_SHADER = "#version 430 core\n"
 
 static ccRenderer CC_MAIN_RENDERER;
 
-// DEFAULT GLFW CALLBACKS
-
-void _ccOnError(int error_code, const char *description) {
-  perror(description);
-}
+void ccOnError(int error_code, const char *description) { perror(description); }
 
 void ccOnFrameBufferSize(GLFWwindow *window, int width, int height) {
   glViewport(0, 0, width, height);
@@ -93,213 +88,33 @@ void ccOnKey(GLFWwindow *window, int key, int scancode, int action, int mods) {
   }
 }
 
-// CC API
-
-// Reads the contents of a file and returns it as a null-terminated string.
-// The caller is responsible for freeing the returned string.
-const char *ccReadFile(const char *filePath) {
-  FILE *file = fopen(filePath, "rb");
-  if (!file) {
-    perror("Failed to open file");
-    return NULL;
-  }
-
-  // Seek to end to determine file size
-  fseek(file, 0, SEEK_END);
-  long fileSize = ftell(file);
-  rewind(file);
-
-  // Allocate memory (+1 for null terminator)
-  char *buffer = (char *)malloc(fileSize + 1);
-  if (!buffer) {
-    perror("Failed to allocate buffer");
-    fclose(file);
-    return NULL;
-  }
-
-  // Read the file into the buffer
-  size_t bytesRead = fread(buffer, 1, fileSize, file);
-  buffer[bytesRead] = '\0'; // Null-terminate
-
-  fclose(file);
-  return buffer;
-}
-
-void ccSetWindowSize(int width, int height) {
-  glfwSetWindowSize(CC_MAIN_WINDOW, width, height);
-  // TODO: recenter window
-}
-
-int ccGetWidth() { return CC_CURRENT_WINDOW_WIDTH; }
-int ccGetHeight() { return CC_CURRENT_WINDOW_HEIGHT; }
-
-void ccClearWindow(float r, float g, float b, float a) {
-  glClearColor(r, g, b, a);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-}
-
-void ccClearWindowU8(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
-  glClearColor((float)r / 255.f, (float)g / 255.f, (float)b / 255.f,
-               (float)a / 255.f);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-}
-
-// Checks whether a shader has compiled successfully.
-bool ccShaderCompileSuccess(const GLuint shader) {
-  int success;
-  glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-  return success == 1;
-}
-
-// Calls glGetShaderInfoLog and returns result
-const char *ccGetShaderInfoLog(const GLuint shader) {
-  char *buffer = (char *)malloc(512);
-  glGetShaderInfoLog(shader, 512, NULL, buffer);
-  return buffer;
-}
-
-GLuint ccLoadShaderFromSource(const char *shaderSource, GLenum shaderType) {
-  GLuint shader = glCreateShader(shaderType);
-  glShaderSource(shader, 1, &shaderSource, NULL);
-  glCompileShader(shader);
-  if (!ccShaderCompileSuccess(shader)) {
-    perror(ccGetShaderInfoLog(shader));
-  }
-  return shader;
-}
-
-// Loads, compiles and returns a shader
-GLuint ccLoadShader(const char *shaderPath, GLenum shaderType) {
-  const char *src = ccReadFile(shaderPath);
-  GLuint shader = ccLoadShaderFromSource(src, shaderType);
-  free((void *)src);
-  return shader;
-}
-
-GLuint ccLoadDefaultShaderProgram() {
-  GLuint vs =
-      ccLoadShaderFromSource(CC_DEFAULT_VERTEX_SHADER, GL_VERTEX_SHADER);
-  GLuint fs =
-      ccLoadShaderFromSource(CC_DEFAULT_FRAGMENT_SHADER, GL_FRAGMENT_SHADER);
-  GLuint shader = glCreateProgram();
-  glAttachShader(shader, vs);
-  glAttachShader(shader, fs);
-  glLinkProgram(shader);
-
-  glDeleteShader(vs);
-  glDeleteShader(fs);
-  return shader;
-}
-
-void ccResetRendererData(ccRenderer *renderer) {
-  renderer->colors = NULL;
-  renderer->vertices = NULL;
-  renderer->indices = NULL;
-  renderer->numColors = 0;
-  renderer->numIndices = 0;
-  renderer->numVertices = 0;
-}
-
-void ccCreateMainRenderer(ccRenderer *renderer) {
-  glGenVertexArrays(1, &renderer->vao);
-  renderer->shaderProgram = ccLoadDefaultShaderProgram();
-  glGenBuffers(1, &renderer->vbo);
-  glGenBuffers(1, &renderer->cbo);
-  glGenBuffers(1, &renderer->ibo);
-  ccResetRendererData(renderer);
-  for (size_t i = 0; i < 4; i++) {
-    renderer->color[i] = 1.0;
-  }
-}
-
-void ccSetRenderColor(float r, float g, float b, float a) {
-  CC_MAIN_RENDERER.color[0] = r;
-  CC_MAIN_RENDERER.color[1] = g;
-  CC_MAIN_RENDERER.color[2] = b;
-  CC_MAIN_RENDERER.color[3] = a;
-}
-
+int ccGetWidth();
+int ccGetHeight();
+void ccSetWindowSize(int width, int height);
+void ccClearWindow(float r, float g, float b, float a);
+void ccClearWindowU8(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
+void ccSetColor(float r, float g, float b, float a);
 void ccDrawTriangle(float x1, float y1, float z1, float x2, float y2, float z2,
-                    float x3, float y3, float z3) {
-  size_t curVerticesSz = CC_MAIN_RENDERER.numVertices * sizeof(float) * 3;
-  size_t newVerticesSz = curVerticesSz + sizeof(float) * 9;
-  float *newVertices = (float *)malloc(newVerticesSz);
-
-  float triangle[9] = {x1, y1, z1, x2, y2, z2, x3, y3, z3};
-  memcpy(newVertices, CC_MAIN_RENDERER.vertices, curVerticesSz);
-  memcpy(&newVertices[CC_MAIN_RENDERER.numVertices * 3], triangle,
-         sizeof(float) * 9);
-
-  free(CC_MAIN_RENDERER.vertices);
-  CC_MAIN_RENDERER.vertices = newVertices;
-  CC_MAIN_RENDERER.numVertices += 3;
-
-  size_t curColorsSz = CC_MAIN_RENDERER.numColors * sizeof(float) * 4;
-  size_t newColorsSz = curColorsSz + sizeof(float) * 12;
-  float *newColors = (float *)malloc(newColorsSz);
-
-  memcpy(newColors, CC_MAIN_RENDERER.colors, curColorsSz);
-  memcpy(&newColors[CC_MAIN_RENDERER.numColors * 4], CC_MAIN_RENDERER.color,
-         sizeof(float) * 4);
-  memcpy(&newColors[CC_MAIN_RENDERER.numColors * 4 + 4], CC_MAIN_RENDERER.color,
-         sizeof(float) * 4);
-  memcpy(&newColors[CC_MAIN_RENDERER.numColors * 4 + 8], CC_MAIN_RENDERER.color,
-         sizeof(float) * 4);
-  free(CC_MAIN_RENDERER.colors);
-  CC_MAIN_RENDERER.colors = newColors;
-  CC_MAIN_RENDERER.numColors += 3;
-
-  size_t curIndicesSz = CC_MAIN_RENDERER.numIndices * sizeof(uint32_t);
-  size_t newIndicesSz = curIndicesSz + sizeof(uint32_t) * 3;
-  uint32_t *newIndices = (uint32_t *)malloc(newIndicesSz);
-  memcpy(newIndices, CC_MAIN_RENDERER.indices, curIndicesSz);
-  uint32_t triangleIndices[3] = {0, 1, 2};
-  for (size_t i = 0; i < 3; i++) {
-    triangleIndices[i] += CC_MAIN_RENDERER.numVertices - 3;
-  }
-  memcpy(&newIndices[CC_MAIN_RENDERER.numIndices], triangleIndices,
-         sizeof(uint32_t) * 3);
-  free(CC_MAIN_RENDERER.indices);
-  CC_MAIN_RENDERER.indices = newIndices;
-  CC_MAIN_RENDERER.numIndices += 3;
-}
-
-void ccRenderData() {
-  glBindVertexArray(CC_MAIN_RENDERER.vao);
-
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, CC_MAIN_RENDERER.ibo);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-               CC_MAIN_RENDERER.numIndices * sizeof(uint32_t),
-               CC_MAIN_RENDERER.indices, GL_DYNAMIC_DRAW);
-
-  glBindBuffer(GL_ARRAY_BUFFER, CC_MAIN_RENDERER.vbo);
-  glBufferData(GL_ARRAY_BUFFER,
-               CC_MAIN_RENDERER.numVertices * sizeof(float) * 3,
-               CC_MAIN_RENDERER.vertices, GL_DYNAMIC_DRAW);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
-  glEnableVertexAttribArray(0);
-
-  glBindBuffer(GL_ARRAY_BUFFER, CC_MAIN_RENDERER.cbo);
-  glBufferData(GL_ARRAY_BUFFER, CC_MAIN_RENDERER.numColors * sizeof(float) * 4,
-               CC_MAIN_RENDERER.colors, GL_DYNAMIC_DRAW);
-  glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)0);
-  glEnableVertexAttribArray(1);
-
-  glBindVertexArray(CC_MAIN_RENDERER.vao);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, CC_MAIN_RENDERER.ibo);
-  glDrawElements(GL_TRIANGLES, CC_MAIN_RENDERER.numIndices, GL_UNSIGNED_INT, 0);
-}
+                    float x3, float y3, float z3);
+const char *ccReadFile(const char *filePath);
+GLuint ccLoadShader(const char *shaderPath, GLenum shaderType);
+GLuint ccLoadShaderFromSource(const char *shaderSource, GLenum shaderType);
+bool ccShaderCompileSuccess(const GLuint shader);
+const char *ccGetShaderInfoLog(const GLuint shader);
 
 #ifndef CC_NO_MAIN
-
-// USER IMPLEMENTED FUNCTIONS
 
 void setup();
 void loop();
 
+GLuint ccLoadDefaultShaderProgram();
+void ccCreateMainRenderer(ccRenderer *renderer);
+void ccRenderData();
+void ccResetRendererData(ccRenderer *renderer);
+
 int main() {
   // GLFW SETUP
-  glfwSetErrorCallback(_ccOnError);
+  glfwSetErrorCallback(ccOnError);
 
   if (!glfwInit()) {
     return -1;
@@ -351,5 +166,197 @@ int main() {
   return 0;
 }
 #endif
+
+int ccGetWidth() { return CC_CURRENT_WINDOW_WIDTH; }
+
+int ccGetHeight() { return CC_CURRENT_WINDOW_HEIGHT; }
+
+void ccSetWindowSize(int width, int height) {
+  glfwSetWindowSize(CC_MAIN_WINDOW, width, height);
+  // TODO: recenter window
+}
+
+void ccClearWindow(float r, float g, float b, float a) {
+  glClearColor(r, g, b, a);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+void ccClearWindowU8(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+  glClearColor((float)r / 255.f, (float)g / 255.f, (float)b / 255.f,
+               (float)a / 255.f);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+void ccSetColor(float r, float g, float b, float a) {
+  CC_MAIN_RENDERER.color[0] = r;
+  CC_MAIN_RENDERER.color[1] = g;
+  CC_MAIN_RENDERER.color[2] = b;
+  CC_MAIN_RENDERER.color[3] = a;
+}
+
+void ccDrawTriangle(float x1, float y1, float z1, float x2, float y2, float z2,
+                    float x3, float y3, float z3) {
+  size_t curVerticesSz = CC_MAIN_RENDERER.numVertices * sizeof(float) * 3;
+  size_t newVerticesSz = curVerticesSz + sizeof(float) * 9;
+  float *newVertices = (float *)malloc(newVerticesSz);
+
+  float triangle[9] = {x1, y1, z1, x2, y2, z2, x3, y3, z3};
+  memcpy(newVertices, CC_MAIN_RENDERER.vertices, curVerticesSz);
+  memcpy(&newVertices[CC_MAIN_RENDERER.numVertices * 3], triangle,
+         sizeof(float) * 9);
+
+  free(CC_MAIN_RENDERER.vertices);
+  CC_MAIN_RENDERER.vertices = newVertices;
+  CC_MAIN_RENDERER.numVertices += 3;
+
+  size_t curColorsSz = CC_MAIN_RENDERER.numColors * sizeof(float) * 4;
+  size_t newColorsSz = curColorsSz + sizeof(float) * 12;
+  float *newColors = (float *)malloc(newColorsSz);
+
+  memcpy(newColors, CC_MAIN_RENDERER.colors, curColorsSz);
+  memcpy(&newColors[CC_MAIN_RENDERER.numColors * 4], CC_MAIN_RENDERER.color,
+         sizeof(float) * 4);
+  memcpy(&newColors[CC_MAIN_RENDERER.numColors * 4 + 4], CC_MAIN_RENDERER.color,
+         sizeof(float) * 4);
+  memcpy(&newColors[CC_MAIN_RENDERER.numColors * 4 + 8], CC_MAIN_RENDERER.color,
+         sizeof(float) * 4);
+  free(CC_MAIN_RENDERER.colors);
+  CC_MAIN_RENDERER.colors = newColors;
+  CC_MAIN_RENDERER.numColors += 3;
+
+  size_t curIndicesSz = CC_MAIN_RENDERER.numIndices * sizeof(uint32_t);
+  size_t newIndicesSz = curIndicesSz + sizeof(uint32_t) * 3;
+  uint32_t *newIndices = (uint32_t *)malloc(newIndicesSz);
+  memcpy(newIndices, CC_MAIN_RENDERER.indices, curIndicesSz);
+  uint32_t triangleIndices[3] = {0, 1, 2};
+  for (size_t i = 0; i < 3; i++) {
+    triangleIndices[i] += CC_MAIN_RENDERER.numVertices - 3;
+  }
+  memcpy(&newIndices[CC_MAIN_RENDERER.numIndices], triangleIndices,
+         sizeof(uint32_t) * 3);
+  free(CC_MAIN_RENDERER.indices);
+  CC_MAIN_RENDERER.indices = newIndices;
+  CC_MAIN_RENDERER.numIndices += 3;
+}
+
+const char *ccReadFile(const char *filePath) {
+  FILE *file = fopen(filePath, "rb");
+  if (!file) {
+    perror("Failed to open file");
+    return NULL;
+  }
+
+  // Seek to end to determine file size
+  fseek(file, 0, SEEK_END);
+  long fileSize = ftell(file);
+  rewind(file);
+
+  // Allocate memory (+1 for null terminator)
+  char *buffer = (char *)malloc(fileSize + 1);
+  if (!buffer) {
+    perror("Failed to allocate buffer");
+    fclose(file);
+    return NULL;
+  }
+
+  // Read the file into the buffer
+  size_t bytesRead = fread(buffer, 1, fileSize, file);
+  buffer[bytesRead] = '\0'; // Null-terminate
+
+  fclose(file);
+  return buffer;
+}
+
+GLuint ccLoadShader(const char *shaderPath, GLenum shaderType) {
+  const char *src = ccReadFile(shaderPath);
+  GLuint shader = ccLoadShaderFromSource(src, shaderType);
+  free((void *)src);
+  return shader;
+}
+
+GLuint ccLoadShaderFromSource(const char *shaderSource, GLenum shaderType) {
+  GLuint shader = glCreateShader(shaderType);
+  glShaderSource(shader, 1, &shaderSource, NULL);
+  glCompileShader(shader);
+  if (!ccShaderCompileSuccess(shader)) {
+    perror(ccGetShaderInfoLog(shader));
+  }
+  return shader;
+}
+
+GLuint ccLoadDefaultShaderProgram() {
+  GLuint vs =
+      ccLoadShaderFromSource(CC_DEFAULT_VERTEX_SHADER, GL_VERTEX_SHADER);
+  GLuint fs =
+      ccLoadShaderFromSource(CC_DEFAULT_FRAGMENT_SHADER, GL_FRAGMENT_SHADER);
+  GLuint shader = glCreateProgram();
+  glAttachShader(shader, vs);
+  glAttachShader(shader, fs);
+  glLinkProgram(shader);
+
+  glDeleteShader(vs);
+  glDeleteShader(fs);
+  return shader;
+}
+
+void ccCreateMainRenderer(ccRenderer *renderer) {
+  glGenVertexArrays(1, &renderer->vao);
+  renderer->shaderProgram = ccLoadDefaultShaderProgram();
+  glGenBuffers(1, &renderer->vbo);
+  glGenBuffers(1, &renderer->cbo);
+  glGenBuffers(1, &renderer->ibo);
+  ccResetRendererData(renderer);
+  for (size_t i = 0; i < 4; i++) {
+    renderer->color[i] = 1.0;
+  }
+}
+
+void ccRenderData() {
+  glBindVertexArray(CC_MAIN_RENDERER.vao);
+
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, CC_MAIN_RENDERER.ibo);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+               CC_MAIN_RENDERER.numIndices * sizeof(uint32_t),
+               CC_MAIN_RENDERER.indices, GL_DYNAMIC_DRAW);
+
+  glBindBuffer(GL_ARRAY_BUFFER, CC_MAIN_RENDERER.vbo);
+  glBufferData(GL_ARRAY_BUFFER,
+               CC_MAIN_RENDERER.numVertices * sizeof(float) * 3,
+               CC_MAIN_RENDERER.vertices, GL_DYNAMIC_DRAW);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+  glEnableVertexAttribArray(0);
+
+  glBindBuffer(GL_ARRAY_BUFFER, CC_MAIN_RENDERER.cbo);
+  glBufferData(GL_ARRAY_BUFFER, CC_MAIN_RENDERER.numColors * sizeof(float) * 4,
+               CC_MAIN_RENDERER.colors, GL_DYNAMIC_DRAW);
+  glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)0);
+  glEnableVertexAttribArray(1);
+
+  glBindVertexArray(CC_MAIN_RENDERER.vao);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, CC_MAIN_RENDERER.ibo);
+  glDrawElements(GL_TRIANGLES, CC_MAIN_RENDERER.numIndices, GL_UNSIGNED_INT, 0);
+}
+
+void ccResetRendererData(ccRenderer *renderer) {
+  renderer->colors = NULL;
+  renderer->vertices = NULL;
+  renderer->indices = NULL;
+  renderer->numColors = 0;
+  renderer->numIndices = 0;
+  renderer->numVertices = 0;
+}
+
+bool ccShaderCompileSuccess(const GLuint shader) {
+  int success;
+  glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+  return success == 1;
+}
+
+// Calls glGetShaderInfoLog and returns result
+const char *ccGetShaderInfoLog(const GLuint shader) {
+  char *buffer = (char *)malloc(512);
+  glGetShaderInfoLog(shader, 512, NULL, buffer);
+  return buffer;
+}
 
 #endif // CC_HEADER
