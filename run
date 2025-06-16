@@ -1,3 +1,6 @@
 #!/usr/bin/bash
 
-gcc -O3 "$1.c" -lm -lglfw -lepoxy -Wall -o $1 && "./$1"
+gcc -O3 "$1.c" \
+    -lm -lglfw -lepoxy \
+    -Wall -Wpedantic -Wextra  -Wconversion -Wsign-conversion \
+    -o $1 && "./$1"
