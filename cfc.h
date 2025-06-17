@@ -137,77 +137,35 @@ static inline void ccVertexAttribute(GLuint index, GLint size, GLenum type,
 }
 
 //
-// RENDERER
-//
-
-//
-typedef struct ccRenderer
-{
-  // Vertex Array Object
-  GLuint vao;
-  // Vertex Buffer Object. Internally `GL_ARRAY_BUFFER`.
-  GLuint vbo;
-  // Color Buffer Object. Internally `GL_ARRAY_BUFFER`.
-  GLuint cbo;
-  // Index Buffer Object. Internally `GL_ELEMENTT_ARRAY_BUFFER`.
-  GLuint ibo;
-  GLuint shaderProgram;
-  GLenum renderMode;
-  uint32_t *indices;
-  float *vertices;
-  float *colors;
-  uint32_t numIndices;
-  uint32_t numVertices;
-  uint32_t numColors;
-  float color[4];
-} ccRenderer;
-
-// The main renderer used in the main loop
-static ccRenderer CC_MAIN_RENDERER;
-
-// Initializes `renderer` by creating OpenGL resources. A vertex array is
-// generated for `vao`. A buffer is generated for `vbo`, `cbo`, `ibo`.
-// `ccResetRendererData` is called. `color` is set to white (1,1,1,1) and
-// `renderMode` is set to `GL_TRIANGLES`.
-static void ccCreateMainRenderer(ccRenderer *renderer)
-{
-  glGenVertexArrays(1, &renderer->vao);
-  renderer->shaderProgram = ccLoadDefaultShaderProgram();
-  glGenBuffers(1, &renderer->vbo);
-  glGenBuffers(1, &renderer->cbo);
-  glGenBuffers(1, &renderer->ibo);
-  /* ccResetRendererData(renderer); */
-  for (size_t i = 0; i < 4; i++)
-  {
-    renderer->color[i] = 1.0;
-  }
-  renderer->renderMode = GL_TRIANGLES;
-}
-
-// Sets the render mode of the main renderer.
-inline static void ccSetRenderMode(GLenum mode)
-{
-  CC_MAIN_RENDERER.renderMode = mode;
-}
-
-//
 // DRAWING
 //
 
 #define CC_BLACK 0, 0, 0, 1
-#define CC_WHITE 1, 1, 1, 1
-#define CC_RED 1, 0, 0, 1
-#define CC_GREEN 0, 1, 0, 1
 #define CC_BLUE 0, 0, 1, 1
+#define CC_CYAN 0, 1, 1, 1
+#define CC_GREEN 0, 1, 0, 1
+#define CC_MAGENT 1, 0, 1, 1
+#define CC_RED 1, 0, 0, 1
+#define CC_WHITE 1, 1, 1, 1
+#define CC_YELLOW 1, 1, 0, 1
 
 typedef struct ccGeometry
 {
+  // XYZ
   float *vertices;
+  // RGBA
   float *colors;
   uint32_t *indices;
   uint32_t numVertices;
   uint32_t numIndices;
 } ccGeometry;
+
+static GLuint CC_MAIN_VAO;
+static GLuint CC_MAIN_VBO;
+static GLuint CC_MAIN_CBO;
+static GLuint CC_MAIN_IBO;
+static GLuint CC_CURRENT_SHADER_PROGRAM;
+static float CC_CURRENT_RENDER_COLOR[4];
 
 // Clears the window screen with the given color.
 // @param r,g,b,a Normalized values from 0-1.
@@ -221,13 +179,13 @@ inline static void ccClearWindow(float r, float g, float b, float a)
 // @param r,g,b,a Normalized values from 0-1.
 static inline void ccSetColor(float r, float g, float b, float a)
 {
-  CC_MAIN_RENDERER.color[0] = r;
-  CC_MAIN_RENDERER.color[1] = g;
-  CC_MAIN_RENDERER.color[2] = b;
-  CC_MAIN_RENDERER.color[3] = a;
+  CC_CURRENT_RENDER_COLOR[0] = r;
+  CC_CURRENT_RENDER_COLOR[1] = g;
+  CC_CURRENT_RENDER_COLOR[2] = b;
+  CC_CURRENT_RENDER_COLOR[3] = a;
 }
 
-// Draws a triangle to be drawn to the screen.
+// Draws a triangle to the screen.
 // @param x1,y1,z1 The first corner of the triangle.
 // @param x2,y2,z2 The second corner of the triangle.
 // @param x3,y3,z3 The third corner of the triangle.
@@ -235,59 +193,57 @@ static inline void ccDrawTriangle(float x1, float y1, float z1, float x2,
                                   float y2, float z2, float x3, float y3,
                                   float z3)
 {
-  glBindVertexArray(CC_MAIN_RENDERER.vao);
+  glBindVertexArray(CC_MAIN_VAO);
 
   float vertices[] = {x1, y1, z1, x2, y2, z2, x3, y3, z3};
-  ccWriteBuffer(GL_ARRAY_BUFFER, CC_MAIN_RENDERER.vbo, sizeof(vertices),
-                vertices, GL_DYNAMIC_DRAW);
+  ccWriteBuffer(GL_ARRAY_BUFFER, CC_MAIN_VBO, sizeof(vertices), vertices,
+                GL_DYNAMIC_DRAW);
   ccVertexAttribute(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), NULL);
 
   float colors[12];
   for (size_t i = 0; i < 3; i++)
   {
-    memcpy(&colors[i * 4], CC_MAIN_RENDERER.color, sizeof(float) * 4);
+    memcpy(&colors[i * 4], CC_CURRENT_RENDER_COLOR, sizeof(float) * 4);
   }
-  ccWriteBuffer(GL_ARRAY_BUFFER, CC_MAIN_RENDERER.cbo, sizeof(colors), colors,
+  ccWriteBuffer(GL_ARRAY_BUFFER, CC_MAIN_CBO, sizeof(colors), colors,
                 GL_DYNAMIC_DRAW);
   ccVertexAttribute(1, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), NULL);
 
   glDrawArrays(GL_TRIANGLES, 0, 3);
 }
 
-// Queues a geometry for drawing to the screen.
-static inline void ccDrawGeometry(ccGeometry *geom)
+static inline void ccDrawGeometry(ccGeometry *geom, GLenum mode)
 {
-  glBindVertexArray(CC_MAIN_RENDERER.vao);
+  glBindVertexArray(CC_MAIN_VAO);
 
-  ccWriteBuffer(GL_ELEMENT_ARRAY_BUFFER, CC_MAIN_RENDERER.ibo,
+  ccWriteBuffer(GL_ELEMENT_ARRAY_BUFFER, CC_MAIN_IBO,
                 geom->numIndices * sizeof(uint32_t), geom->indices,
                 GL_DYNAMIC_DRAW);
 
-  ccWriteBuffer(GL_ARRAY_BUFFER, CC_MAIN_RENDERER.vbo,
+  ccWriteBuffer(GL_ARRAY_BUFFER, CC_MAIN_VBO,
                 geom->numVertices * 3 * sizeof(float), geom->vertices,
                 GL_DYNAMIC_DRAW);
   ccVertexAttribute(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), NULL);
 
-  ccWriteBuffer(GL_ARRAY_BUFFER, CC_MAIN_RENDERER.cbo,
+  ccWriteBuffer(GL_ARRAY_BUFFER, CC_MAIN_IBO,
                 geom->numVertices * 4 * sizeof(float), geom->colors,
                 GL_DYNAMIC_DRAW);
   ccVertexAttribute(1, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), NULL);
 
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, CC_MAIN_RENDERER.ibo);
-  glDrawElements(CC_MAIN_RENDERER.renderMode, geom->numIndices, GL_UNSIGNED_INT,
-                 0);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, CC_MAIN_IBO);
+  glDrawElements(mode, geom->numIndices, GL_UNSIGNED_INT, 0);
 }
 
 static inline void ccDrawGeometryUnindexed(ccGeometry *geom, GLenum mode)
 {
-  glBindVertexArray(CC_MAIN_RENDERER.vao);
+  glBindVertexArray(CC_MAIN_VAO);
 
-  ccWriteBuffer(GL_ARRAY_BUFFER, CC_MAIN_RENDERER.vbo,
+  ccWriteBuffer(GL_ARRAY_BUFFER, CC_MAIN_VBO,
                 geom->numVertices * 3 * sizeof(float), geom->vertices,
                 GL_DYNAMIC_DRAW);
   ccVertexAttribute(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), NULL);
 
-  ccWriteBuffer(GL_ARRAY_BUFFER, CC_MAIN_RENDERER.cbo,
+  ccWriteBuffer(GL_ARRAY_BUFFER, CC_MAIN_CBO,
                 geom->numVertices * 4 * sizeof(float), geom->colors,
                 GL_DYNAMIC_DRAW);
   ccVertexAttribute(1, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), NULL);
@@ -460,13 +416,18 @@ int main()
   CC_DEFAULT_VIEW_MATRIX = glms_translate_make((vec3s){{0, 0, -1}});
   CC_DEFAULT_MODEL_MATRIX = glms_mat4_identity();
 
-  ccCreateMainRenderer(&CC_MAIN_RENDERER);
+  glGenVertexArrays(1, &CC_MAIN_VAO);
+  CC_CURRENT_SHADER_PROGRAM = ccLoadDefaultShaderProgram();
+  glGenBuffers(1, &CC_MAIN_VBO);
+  glGenBuffers(1, &CC_MAIN_CBO);
+  glGenBuffers(1, &CC_MAIN_IBO);
+  /* ccCreateMainRenderer(&CC_MAIN_RENDERER); */
 
-  glUseProgram(CC_MAIN_RENDERER.shaderProgram);
-  GLint umodel = glGetUniformLocation(CC_MAIN_RENDERER.shaderProgram, "model");
-  GLint uview = glGetUniformLocation(CC_MAIN_RENDERER.shaderProgram, "view");
+  glUseProgram(CC_CURRENT_SHADER_PROGRAM);
+  GLint umodel = glGetUniformLocation(CC_CURRENT_SHADER_PROGRAM, "model");
+  GLint uview = glGetUniformLocation(CC_CURRENT_SHADER_PROGRAM, "view");
   GLint uprojection =
-      glGetUniformLocation(CC_MAIN_RENDERER.shaderProgram, "projection");
+      glGetUniformLocation(CC_CURRENT_SHADER_PROGRAM, "projection");
 
   setup();
   double prevTime = glfwGetTime();

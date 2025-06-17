@@ -84,7 +84,6 @@ void updateParticles(Particles *p)
 void setup()
 {
   srand((uint32_t)time(NULL));
-  ccSetRenderMode(GL_POINTS);
   // Initialize the particle system
   ps.numParticles = NUM_PARTICLES;
   for (size_t i = 0; i < NUM_PARTICLES; i++)
