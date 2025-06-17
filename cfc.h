@@ -169,7 +169,7 @@ static float CC_CURRENT_RENDER_COLOR[4];
 
 // Clears the window screen with the given color.
 // @param r,g,b,a Normalized values from 0-1.
-inline static void ccClearWindow(float r, float g, float b, float a)
+static inline void ccClearWindow(float r, float g, float b, float a)
 {
   glClearColor(r, g, b, a);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -390,44 +390,47 @@ void loop();
 int main()
 {
   glfwSetErrorCallback(ccOnError);
+
+  printf("Initializing GLFW\n");
   if (!glfwInit())
   {
     return -1;
   }
 
+  printf("GL Version: %i.%i\n", CC_GL_VERSION_MAJOR, CC_GL_VERSION_MINOR);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, CC_GL_VERSION_MAJOR);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, CC_GL_VERSION_MINOR);
-  CC_MAIN_WINDOW = glfwCreateWindow(
-      CC_DEFAULT_WINDOW_WIDTH, CC_DEFAULT_WINDOW_HEIGHT, "GLFW", NULL, NULL);
+  printf("Creating window\n");
+  CC_MAIN_WINDOW = glfwCreateWindow(CC_CURRENT_WINDOW_WIDTH,
+                                    CC_CURRENT_WINDOW_HEIGHT, "", NULL, NULL);
   if (!CC_MAIN_WINDOW)
   {
     glfwTerminate();
     return -1;
   }
   glfwSetFramebufferSizeCallback(CC_MAIN_WINDOW, ccOnFrameBufferSize);
+  printf("Obtaining context\n");
   glfwMakeContextCurrent(CC_MAIN_WINDOW);
 
   glfwSetKeyCallback(CC_MAIN_WINDOW, ccOnKey);
-  glViewport(0, 0, CC_DEFAULT_WINDOW_WIDTH, CC_DEFAULT_WINDOW_HEIGHT);
-
-  CC_DEFAULT_PROJECTION_MATRIX =
-      glms_ortho(0, (float)CC_DEFAULT_WINDOW_WIDTH, 0,
-                 (float)CC_DEFAULT_WINDOW_HEIGHT, 0.1f, 100.0);
-  CC_DEFAULT_VIEW_MATRIX = glms_translate_make((vec3s){{0, 0, -1}});
-  CC_DEFAULT_MODEL_MATRIX = glms_mat4_identity();
+  glViewport(0, 0, CC_CURRENT_WINDOW_WIDTH, CC_CURRENT_WINDOW_HEIGHT);
 
   glGenVertexArrays(1, &CC_MAIN_VAO);
-  CC_CURRENT_SHADER_PROGRAM = ccLoadDefaultShaderProgram();
   glGenBuffers(1, &CC_MAIN_VBO);
   glGenBuffers(1, &CC_MAIN_CBO);
   glGenBuffers(1, &CC_MAIN_IBO);
-  /* ccCreateMainRenderer(&CC_MAIN_RENDERER); */
-
+  CC_CURRENT_SHADER_PROGRAM = ccLoadDefaultShaderProgram();
   glUseProgram(CC_CURRENT_SHADER_PROGRAM);
+
   GLint umodel = glGetUniformLocation(CC_CURRENT_SHADER_PROGRAM, "model");
   GLint uview = glGetUniformLocation(CC_CURRENT_SHADER_PROGRAM, "view");
   GLint uprojection =
       glGetUniformLocation(CC_CURRENT_SHADER_PROGRAM, "projection");
+
+  CC_DEFAULT_PROJECTION_MATRIX = glms_ortho(
+      0, CC_CURRENT_WINDOW_WIDTH, 0, CC_CURRENT_WINDOW_HEIGHT, 0.1f, 100.0);
+  CC_DEFAULT_VIEW_MATRIX = glms_translate_make((vec3s){{0, 0, -1}});
+  CC_DEFAULT_MODEL_MATRIX = glms_mat4_identity();
 
   setup();
   double prevTime = glfwGetTime();
