@@ -144,7 +144,7 @@ static inline void ccVertexAttribute(GLuint index, GLint size, GLenum type,
 #define CC_BLUE 0, 0, 1, 1
 #define CC_CYAN 0, 1, 1, 1
 #define CC_GREEN 0, 1, 0, 1
-#define CC_MAGENT 1, 0, 1, 1
+#define CC_MAGENTA 1, 0, 1, 1
 #define CC_RED 1, 0, 0, 1
 #define CC_WHITE 1, 1, 1, 1
 #define CC_YELLOW 1, 1, 0, 1
