@@ -18,7 +18,7 @@ typedef struct
 } Particles;
 
 // Use white to render particles
-static const float particleColor[4] = {1.0, 1.0, 1.0, 1.0};
+static const float particleColor[4] = {CC_WHITE};
 
 static Particles ps;
 
@@ -103,7 +103,7 @@ void loop()
 {
   ccClearWindow(0, 0, 0, 1.0);
   ccGeometry g = createGeometryFromParticles(&ps);
-  ccDrawGeometry(&g);
+  ccDrawGeometryUnindexed(&g, GL_POINTS);
   if (PRINT_FPS)
   {
     printf("%f\n", ccGetFps());

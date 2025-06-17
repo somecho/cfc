@@ -2,5 +2,5 @@
 
 gcc -O3 "$1.c" \
     -lm -lglfw -lepoxy \
-    -Wall -Wpedantic -Wextra  -Wconversion -Wsign-conversion \
+    -Wall -Wpedantic -Wextra \
     -o $1 && "./$1"
