@@ -277,6 +277,64 @@ static inline void ccDrawGeometryUnindexed(ccGeometry *geom, GLenum mode)
   glDrawArrays(mode, 0, geom->numVertices);
 }
 
+typedef struct ccPolyline
+{
+  float *vertices;
+  // num floats
+  size_t size;
+  // num floats
+  size_t capacity;
+} ccPolyline;
+
+static inline void ccPolyline_init(ccPolyline *l)
+{
+  size_t initialCapacity = 30;
+  l->vertices = (float *)malloc(sizeof(float) * initialCapacity);
+  l->size = 0;
+  l->capacity = initialCapacity;
+}
+static inline void ccPolyline_addVertex(ccPolyline *l, float x, float y,
+                                        float z)
+{
+  if (l->size + 3 < l->capacity)
+  {
+    l->vertices[l->size] = x;
+    l->vertices[l->size + 1] = y;
+    l->vertices[l->size + 2] = z;
+    l->size += 3;
+  }
+  else
+  {
+    float *tmp = l->vertices;
+    l->vertices = (float *)malloc(l->capacity * 2 * sizeof(float));
+    memcpy(l->vertices, tmp, l->size * sizeof(float));
+    l->capacity *= 2;
+    free((void *)tmp);
+    ccPolyline_addVertex(l, x, y, z);
+  }
+}
+
+static inline void ccDrawPolyline(ccPolyline *l)
+{
+  size_t numVertices = l->size / 3;
+  glBindVertexArray(CC_MAIN_VAO);
+
+  ccWriteBuffer(GL_ARRAY_BUFFER, CC_MAIN_VBO, l->size * sizeof(float),
+                l->vertices, GL_DYNAMIC_DRAW);
+  ccVertexAttribute(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), NULL);
+
+  float *colors = (float *)malloc(numVertices * 4 * sizeof(float));
+  for (size_t i = 0; i < numVertices; i++)
+  {
+    memcpy(&colors[i * 4], CC_CURRENT_RENDER_COLOR, sizeof(float) * 4);
+  }
+  ccWriteBuffer(GL_ARRAY_BUFFER, CC_MAIN_CBO, numVertices * 4 * sizeof(float),
+                colors, GL_DYNAMIC_DRAW);
+  ccVertexAttribute(1, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), NULL);
+  free((void *)colors);
+  glDrawArrays(GL_LINE_STRIP, 0, l->size / 3);
+}
+
 //
 // SHADERS
 //
