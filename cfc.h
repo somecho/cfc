@@ -213,6 +213,32 @@ static inline void ccDrawTriangle(float x1, float y1, float z1, float x2,
   glDrawArrays(GL_TRIANGLES, 0, 3);
 }
 
+// Draws a quad to the screen at z = 0.
+// @param x, y The top left of the quad
+// @param w, h The width and height of the quad
+static inline void ccDrawQuad(float x, float y, float w, float h)
+{
+  float vertices[] = {x,     y,     0, // TOP LEFT
+                      x + w, y,     0, // TOP RIGHT
+                      x + w, y + h, 0, // BOTTOM RIGHT
+                      x,     y + h, 0};
+  glBindVertexArray(CC_MAIN_VAO);
+  ccWriteBuffer(GL_ARRAY_BUFFER, CC_MAIN_VBO, sizeof(vertices), vertices,
+                GL_DYNAMIC_DRAW);
+  ccVertexAttribute(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), NULL);
+
+  float colors[16];
+  for (size_t i = 0; i < 4; i++)
+  {
+    memcpy(&colors[i * 4], CC_CURRENT_RENDER_COLOR, sizeof(float) * 4);
+  }
+  ccWriteBuffer(GL_ARRAY_BUFFER, CC_MAIN_CBO, sizeof(colors), colors,
+                GL_DYNAMIC_DRAW);
+  ccVertexAttribute(1, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), NULL);
+
+  glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+}
+
 static inline void ccDrawGeometry(ccGeometry *geom, GLenum mode)
 {
   glBindVertexArray(CC_MAIN_VAO);
@@ -364,18 +390,37 @@ static inline GLuint ccLoadDefaultShaderProgram()
                                          CC_DEFAULT_VERTEX_SHADER);
 }
 
+static inline void ccSetUniform1f(GLuint shader, const char *uniformName,
+                                  float f)
+{
+  GLint u = glGetUniformLocation(shader, uniformName);
+  glUniform1f(u, f);
+}
+
+static inline void ccSetUniform2f(GLuint shader, const char *uniformName,
+                                  float f1, float f2)
+{
+  GLint u = glGetUniformLocation(shader, uniformName);
+  glUniform2f(u, f1, f2);
+}
+
+static inline void ccSetUniformMat4fv(GLuint shader, const char *uniformName,
+                                      bool transpose, const float *value)
+{
+  GLint u = glGetUniformLocation(shader, uniformName);
+  glUniformMatrix4fv(u, 1, transpose, value);
+}
+
 // Provides the default shader uniforms. For the vertex shader, the default
 // `model`, `view` and `projection` matrices are provided and are called so
 // respectively.
 static inline void ccSetDefaultShaderUniforms(GLuint shader)
 {
-  GLint umodel = glGetUniformLocation(shader, "model");
-  GLint uview = glGetUniformLocation(shader, "view");
-  GLint uprojection = glGetUniformLocation(shader, "projection");
-  glUniformMatrix4fv(umodel, 1, GL_FALSE,
+  ccSetUniformMat4fv(shader, "model", false,
                      (float *)&CC_DEFAULT_MODEL_MATRIX.raw);
-  glUniformMatrix4fv(uview, 1, GL_FALSE, (float *)&CC_DEFAULT_VIEW_MATRIX.raw);
-  glUniformMatrix4fv(uprojection, 1, GL_FALSE,
+  ccSetUniformMat4fv(shader, "view", false,
+                     (float *)&CC_DEFAULT_VIEW_MATRIX.raw);
+  ccSetUniformMat4fv(shader, "projection", false,
                      (float *)&CC_DEFAULT_PROJECTION_MATRIX.raw);
 }
 
