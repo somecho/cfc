@@ -165,6 +165,7 @@ static GLuint CC_MAIN_VBO;
 static GLuint CC_MAIN_CBO;
 static GLuint CC_MAIN_IBO;
 static GLuint CC_CURRENT_SHADER_PROGRAM;
+static GLuint CC_DEFAULT_SHADER_PROGRAM;
 static float CC_CURRENT_RENDER_COLOR[4];
 
 // Clears the window screen with the given color.
@@ -332,20 +333,70 @@ static inline GLuint ccLoadShader(const char *shaderPath, GLenum shaderType)
   return shader;
 }
 
-// Creates and returns the default shader program used by the main renderer.
-static GLuint ccLoadDefaultShaderProgram()
+// @returns a shader compiled with the shader source strings. If either
+// `fragmentShaderSource` or `vertexShaderSource` is `NULL`, the respective
+// default shaders will be used instead.
+static inline GLuint ccCreateShaderProgramFromSource(
+    const char *fragmentShaderSource, const char *vertexShaderSource)
 {
-  GLuint vs =
-      ccLoadShaderFromSource(CC_DEFAULT_VERTEX_SHADER, GL_VERTEX_SHADER);
-  GLuint fs =
-      ccLoadShaderFromSource(CC_DEFAULT_FRAGMENT_SHADER, GL_FRAGMENT_SHADER);
-  GLuint shader = glCreateProgram();
+  const char *fsSrc = fragmentShaderSource == NULL ? CC_DEFAULT_FRAGMENT_SHADER
+                                                   : fragmentShaderSource;
+  const char *vsSrc = vertexShaderSource == NULL ? CC_DEFAULT_VERTEX_SHADER
+                                                 : vertexShaderSource;
+
+  const GLuint fs = ccLoadShaderFromSource(fsSrc, GL_FRAGMENT_SHADER);
+  const GLuint vs = ccLoadShaderFromSource(vsSrc, GL_VERTEX_SHADER);
+
+  const GLuint shader = glCreateProgram();
+
   glAttachShader(shader, vs);
   glAttachShader(shader, fs);
   glLinkProgram(shader);
   glDeleteShader(vs);
   glDeleteShader(fs);
   return shader;
+}
+
+// Creates and returns the default shader program used by the main renderer.
+static inline GLuint ccLoadDefaultShaderProgram()
+{
+  return ccCreateShaderProgramFromSource(CC_DEFAULT_FRAGMENT_SHADER,
+                                         CC_DEFAULT_VERTEX_SHADER);
+}
+
+// Provides the default shader uniforms. For the vertex shader, the default
+// `model`, `view` and `projection` matrices are provided and are called so
+// respectively.
+static inline void ccSetDefaultShaderUniforms(GLuint shader)
+{
+  GLint umodel = glGetUniformLocation(shader, "model");
+  GLint uview = glGetUniformLocation(shader, "view");
+  GLint uprojection = glGetUniformLocation(shader, "projection");
+  glUniformMatrix4fv(umodel, 1, GL_FALSE,
+                     (float *)&CC_DEFAULT_MODEL_MATRIX.raw);
+  glUniformMatrix4fv(uview, 1, GL_FALSE, (float *)&CC_DEFAULT_VIEW_MATRIX.raw);
+  glUniformMatrix4fv(uprojection, 1, GL_FALSE,
+                     (float *)&CC_DEFAULT_PROJECTION_MATRIX.raw);
+}
+
+// Changes the current shader program to the one provided and provides it with
+// the default shader uniforms.
+// @sa `ccSetDefaultShaderUniforms`
+static inline void ccUseShader(GLuint shader)
+{
+  CC_CURRENT_SHADER_PROGRAM = shader;
+  glUseProgram(shader);
+  ccSetDefaultShaderUniforms(shader);
+}
+
+// Changes the current shader program to the default shader program and provides
+// it with the default shader uniforms.
+// @sa `ccSetDefaultShaderUniforms`
+static inline void ccResetShader()
+{
+  CC_CURRENT_SHADER_PROGRAM = CC_DEFAULT_SHADER_PROGRAM;
+  glUseProgram(CC_DEFAULT_SHADER_PROGRAM);
+  ccSetDefaultShaderUniforms(CC_DEFAULT_SHADER_PROGRAM);
 }
 
 #ifndef CC_NO_MAIN
@@ -420,12 +471,8 @@ int main()
   glGenBuffers(1, &CC_MAIN_CBO);
   glGenBuffers(1, &CC_MAIN_IBO);
   CC_CURRENT_SHADER_PROGRAM = ccLoadDefaultShaderProgram();
+  CC_DEFAULT_SHADER_PROGRAM = CC_CURRENT_SHADER_PROGRAM;
   glUseProgram(CC_CURRENT_SHADER_PROGRAM);
-
-  GLint umodel = glGetUniformLocation(CC_CURRENT_SHADER_PROGRAM, "model");
-  GLint uview = glGetUniformLocation(CC_CURRENT_SHADER_PROGRAM, "view");
-  GLint uprojection =
-      glGetUniformLocation(CC_CURRENT_SHADER_PROGRAM, "projection");
 
   CC_DEFAULT_PROJECTION_MATRIX = glms_ortho(
       0, CC_CURRENT_WINDOW_WIDTH, 0, CC_CURRENT_WINDOW_HEIGHT, 0.1f, 100.0);
@@ -436,6 +483,11 @@ int main()
   double prevTime = glfwGetTime();
   while (!glfwWindowShouldClose(CC_MAIN_WINDOW))
   {
+    GLint umodel = glGetUniformLocation(CC_CURRENT_SHADER_PROGRAM, "model");
+    GLint uview = glGetUniformLocation(CC_CURRENT_SHADER_PROGRAM, "view");
+    GLint uprojection =
+        glGetUniformLocation(CC_CURRENT_SHADER_PROGRAM, "projection");
+
     glUniformMatrix4fv(umodel, 1, GL_FALSE,
                        (float *)&CC_DEFAULT_MODEL_MATRIX.raw);
     glUniformMatrix4fv(uview, 1, GL_FALSE,
