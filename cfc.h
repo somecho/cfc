@@ -1,4 +1,4 @@
-#include <stdbool.h>
+#include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -66,7 +66,8 @@ static const char *ccReadFile(const char *filePath)
 
 // FORWARD DECLARATIONS
 
-static GLuint ccLoadDefaultShaderProgram();
+static inline GLuint ccLoadDefaultShaderProgram();
+static inline void ccSetDefaultShaderUniforms(GLuint shader);
 
 // WINDOW MANAGEMENT
 
@@ -86,10 +87,24 @@ static inline int ccGetHeight()
   return CC_CURRENT_WINDOW_HEIGHT;
 }
 
+static inline void ccCenterWindow()
+{
+  int count;
+  auto monitors = glfwGetMonitors(&count);
+  assert(count >= 1);
+  int _x, _y, monitorW, monitorH;
+  glfwGetMonitorWorkarea(monitors[0], &_x, &_y, &monitorW, &monitorH);
+  int x = (monitorW - CC_CURRENT_WINDOW_WIDTH) / 2;
+  int y = (monitorH - CC_CURRENT_WINDOW_HEIGHT) / 2;
+  glfwSetWindowPos(CC_MAIN_WINDOW, x, y);
+}
+
 static inline void ccSetWindowSize(int width, int height)
 {
+  CC_CURRENT_WINDOW_WIDTH = width;
+  CC_CURRENT_WINDOW_HEIGHT = height;
   glfwSetWindowSize(CC_MAIN_WINDOW, width, height);
-  // TODO: recenter window
+  ccCenterWindow();
 }
 
 //
@@ -210,6 +225,7 @@ static inline void ccDrawTriangle(float x1, float y1, float z1, float x2,
                 GL_DYNAMIC_DRAW);
   ccVertexAttribute(1, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), NULL);
 
+  ccSetDefaultShaderUniforms(CC_CURRENT_SHADER_PROGRAM);
   glDrawArrays(GL_TRIANGLES, 0, 3);
 }
 
@@ -293,25 +309,20 @@ static inline void ccPolyline_init(ccPolyline *l)
   l->size = 0;
   l->capacity = initialCapacity;
 }
+
 static inline void ccPolyline_addVertex(ccPolyline *l, float x, float y,
                                         float z)
 {
-  if (l->size + 3 < l->capacity)
+  if (l->size + 3 >= l->capacity)
   {
-    l->vertices[l->size] = x;
-    l->vertices[l->size + 1] = y;
-    l->vertices[l->size + 2] = z;
-    l->size += 3;
-  }
-  else
-  {
-    float *tmp = l->vertices;
-    l->vertices = (float *)malloc(l->capacity * 2 * sizeof(float));
-    memcpy(l->vertices, tmp, l->size * sizeof(float));
+    l->vertices =
+        (float *)realloc(l->vertices, l->capacity * 2 * sizeof(float));
     l->capacity *= 2;
-    free((void *)tmp);
-    ccPolyline_addVertex(l, x, y, z);
   }
+  l->vertices[l->size] = x;
+  l->vertices[l->size + 1] = y;
+  l->vertices[l->size + 2] = z;
+  l->size += 3;
 }
 
 static inline void ccDrawPolyline(ccPolyline *l)
@@ -554,6 +565,7 @@ int main()
   printf("GL Version: %i.%i\n", CC_GL_VERSION_MAJOR, CC_GL_VERSION_MINOR);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, CC_GL_VERSION_MAJOR);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, CC_GL_VERSION_MINOR);
+  glfwWindowHint(GLFW_SAMPLES, 8);
   printf("Creating window\n");
   CC_MAIN_WINDOW = glfwCreateWindow(CC_CURRENT_WINDOW_WIDTH,
                                     CC_CURRENT_WINDOW_HEIGHT, "", NULL, NULL);
@@ -597,6 +609,7 @@ int main()
                        (float *)&CC_DEFAULT_VIEW_MATRIX.raw);
     glUniformMatrix4fv(uprojection, 1, GL_FALSE,
                        (float *)&CC_DEFAULT_PROJECTION_MATRIX.raw);
+
     loop();
     glfwSwapBuffers(CC_MAIN_WINDOW);
     glfwPollEvents();
