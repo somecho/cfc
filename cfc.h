@@ -133,12 +133,28 @@ static inline double ccGetFps()
 // GL Helpers
 //
 
+static GLuint CC_MAIN_VAO;
+static GLuint CC_MAIN_VBO;
+static GLuint CC_MAIN_CBO;
+static GLuint CC_MAIN_IBO;
+
 // Binds `buffer` to `target` and writes `data` to it.
 static inline void ccWriteBuffer(GLenum target, GLuint buffer, GLsizeiptr size,
                                  const void *data, GLenum usage)
 {
   glBindBuffer(target, buffer);
   glBufferData(target, size, data, usage);
+}
+
+static inline void ccWriteMainIndexBuffer(size_t numIndices, uint32_t *indices)
+{
+  ccWriteBuffer(GL_ELEMENT_ARRAY_BUFFER, CC_MAIN_IBO,
+                numIndices * sizeof(uint32_t), indices, GL_DYNAMIC_DRAW);
+}
+
+static inline void ccWriteArrayBuffer(GLuint buffer, size_t size, void *data)
+{
+  ccWriteBuffer(GL_ARRAY_BUFFER, buffer, size, data, GL_DYNAMIC_DRAW);
 }
 
 // Shorthand for calling `glVertexAttribPointer` and
@@ -149,6 +165,16 @@ static inline void ccVertexAttribute(GLuint index, GLint size, GLenum type,
 {
   glVertexAttribPointer(index, size, type, normalized, stride, pointer);
   glEnableVertexAttribArray(index);
+}
+
+static inline void ccVertexAttribute3f(GLuint index)
+{
+  ccVertexAttribute(index, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), NULL);
+}
+
+static inline void ccVertexAttribute4f(GLuint index)
+{
+  ccVertexAttribute(index, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), NULL);
 }
 
 //
@@ -175,10 +201,6 @@ typedef struct ccGeometry
   uint32_t numIndices;
 } ccGeometry;
 
-static GLuint CC_MAIN_VAO;
-static GLuint CC_MAIN_VBO;
-static GLuint CC_MAIN_CBO;
-static GLuint CC_MAIN_IBO;
 static GLuint CC_CURRENT_SHADER_PROGRAM;
 static GLuint CC_DEFAULT_SHADER_PROGRAM;
 static float CC_CURRENT_RENDER_COLOR[4];
@@ -252,6 +274,7 @@ static inline void ccDrawQuad(float x, float y, float w, float h)
                 GL_DYNAMIC_DRAW);
   ccVertexAttribute(1, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), NULL);
 
+  ccSetDefaultShaderUniforms(CC_CURRENT_SHADER_PROGRAM);
   glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 }
 
@@ -259,21 +282,18 @@ static inline void ccDrawGeometry(ccGeometry *geom, GLenum mode)
 {
   glBindVertexArray(CC_MAIN_VAO);
 
-  ccWriteBuffer(GL_ELEMENT_ARRAY_BUFFER, CC_MAIN_IBO,
-                geom->numIndices * sizeof(uint32_t), geom->indices,
-                GL_DYNAMIC_DRAW);
+  ccWriteMainIndexBuffer(geom->numIndices, geom->indices);
 
-  ccWriteBuffer(GL_ARRAY_BUFFER, CC_MAIN_VBO,
-                geom->numVertices * 3 * sizeof(float), geom->vertices,
-                GL_DYNAMIC_DRAW);
-  ccVertexAttribute(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), NULL);
+  ccWriteArrayBuffer(CC_MAIN_VBO, geom->numVertices * 3 * sizeof(float),
+                     geom->vertices);
+  ccVertexAttribute3f(0);
 
-  ccWriteBuffer(GL_ARRAY_BUFFER, CC_MAIN_IBO,
-                geom->numVertices * 4 * sizeof(float), geom->colors,
-                GL_DYNAMIC_DRAW);
-  ccVertexAttribute(1, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), NULL);
+  ccWriteArrayBuffer(CC_MAIN_CBO, geom->numVertices * 4 * sizeof(float),
+                     geom->colors);
+  ccVertexAttribute4f(1);
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, CC_MAIN_IBO);
+  ccSetDefaultShaderUniforms(CC_CURRENT_SHADER_PROGRAM);
   glDrawElements(mode, geom->numIndices, GL_UNSIGNED_INT, 0);
 }
 
@@ -290,6 +310,7 @@ static inline void ccDrawGeometryUnindexed(ccGeometry *geom, GLenum mode)
                 geom->numVertices * 4 * sizeof(float), geom->colors,
                 GL_DYNAMIC_DRAW);
   ccVertexAttribute(1, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), NULL);
+  ccSetDefaultShaderUniforms(CC_CURRENT_SHADER_PROGRAM);
   glDrawArrays(mode, 0, geom->numVertices);
 }
 
@@ -343,6 +364,7 @@ static inline void ccDrawPolyline(ccPolyline *l)
                 colors, GL_DYNAMIC_DRAW);
   ccVertexAttribute(1, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), NULL);
   free((void *)colors);
+  ccSetDefaultShaderUniforms(CC_CURRENT_SHADER_PROGRAM);
   glDrawArrays(GL_LINE_STRIP, 0, l->size / 3);
 }
 

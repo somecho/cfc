@@ -19,7 +19,7 @@ void randomizeParticle(size_t i)
 {
   pos[i * 3] = ((float)rand() / (float)RAND_MAX) * ccGetWidth();
   pos[i * 3 + 1] = ((float)rand() / (float)RAND_MAX) * ccGetHeight();
-  heading[i] = ((float)rand() / (float)RAND_MAX) * M_PI * 2.f;
+  heading[i] = ((float)rand() / (float)RAND_MAX) * GLM_PI * 2.f;
   speed[i] = ((float)rand() / (float)RAND_MAX) * 2.f + 1.f;
   age[i] = 0;
   maxAge[i] = rand() % 200;
@@ -37,7 +37,7 @@ void updateParticles()
       pos[i * 3 + 1] += sinf(heading[i]) * speed[i];
 #if USE_PERLIN_NOISE
       vec3 n = {pos[i * 3] * noisef, pos[i * 3 + 1] * noisef, t};
-      heading[i] = glm_perlin_vec3(n) * M_PI * 2;
+      heading[i] = glm_perlin_vec3(n) * GLM_PI * 2;
 #else
       heading[i] += speed[i] * 0.01;
 #endif
