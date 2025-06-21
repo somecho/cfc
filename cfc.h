@@ -7,6 +7,8 @@
 #include <cglm/cglm.h>
 #include <cglm/struct.h>
 
+#include <png.h>
+
 #include <epoxy/gl.h>
 #include <epoxy/glx.h>
 
@@ -22,9 +24,18 @@
 #define CC_GL_VERSION_MINOR 3
 #endif
 
+// FORWARD DECLARATIONS
+
+static inline int ccGetWidth();
+static inline int ccGetHeight();
+static inline GLuint ccLoadDefaultShaderProgram();
+static inline void ccSetDefaultShaderUniforms(GLuint shader);
+
 //
 // UTILITIES
 //
+
+#define APPLY3(v) v.x, v.y, v.z
 
 // Opens the file at `filePath` and returns the content as a `const char *`
 // owned by the caller. Returns `NULL` if this fails.
@@ -64,10 +75,90 @@ static const char *ccReadFile(const char *filePath)
   return buffer;
 }
 
-// FORWARD DECLARATIONS
+// Writes PNG in RGB format to disk.
+int ccWritePngRgb(const char *filename, void *data, int width, int height)
+{
+  FILE *fp = fopen(filename, "wb");
+  if (!fp)
+  {
+    perror("fopen");
+    return 1;
+  }
 
-static inline GLuint ccLoadDefaultShaderProgram();
-static inline void ccSetDefaultShaderUniforms(GLuint shader);
+  png_structp png =
+      png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+  if (!png)
+  {
+    fclose(fp);
+    return 1;
+  }
+
+  png_infop info = png_create_info_struct(png);
+  if (!info)
+  {
+    png_destroy_write_struct(&png, NULL);
+    fclose(fp);
+    return 1;
+  }
+
+  if (setjmp(png_jmpbuf(png)))
+  {
+    png_destroy_write_struct(&png, &info);
+    fclose(fp);
+    return 1;
+  }
+
+  png_init_io(png, fp);
+
+  // Set image attributes
+  png_set_IHDR(png, info, width, height, 8, PNG_COLOR_TYPE_RGB,
+               PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_BASE,
+               PNG_FILTER_TYPE_BASE);
+
+  png_write_info(png, info);
+
+  // Convert void* to byte pointer
+  png_bytep d = (png_bytep)data;
+
+  // Allocate row pointers
+  png_bytep *row_pointers = malloc(sizeof(png_bytep) * height);
+  if (!row_pointers)
+  {
+    png_destroy_write_struct(&png, &info);
+    fclose(fp);
+    return 1;
+  }
+
+  for (int y = 0; y < height; y++)
+  {
+    row_pointers[y] = d + y * width * 3;
+  }
+
+  png_write_image(png, row_pointers);
+  png_write_end(png, NULL);
+
+  // Cleanup
+  free(row_pointers);
+  png_destroy_write_struct(&png, &info);
+  fclose(fp);
+
+  return 0;
+}
+
+// Saves current frame (the front buffer) to disk in RGB format.
+// @param filename Filename of png data. Remember to use `.png` extension.
+// @returns `0` on success
+int ccSaveFrameRgb(const char *filename)
+{
+  void *pixels = malloc(ccGetWidth() * ccGetHeight() * 3 * sizeof(int));
+  assert(pixels != NULL);
+  glReadPixels(0, 0, ccGetWidth(), ccGetHeight(), GL_RGB, GL_UNSIGNED_BYTE,
+               pixels);
+  const auto res = ccWritePngRgb(filename, pixels, ccGetWidth(), ccGetHeight());
+  free(pixels);
+  pixels = NULL;
+  return res;
+}
 
 // WINDOW MANAGEMENT
 
@@ -167,6 +258,11 @@ static inline void ccVertexAttribute(GLuint index, GLint size, GLenum type,
   glEnableVertexAttribArray(index);
 }
 
+static inline void ccVertexAttribute2f(GLuint index)
+{
+  ccVertexAttribute(index, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), NULL);
+}
+
 static inline void ccVertexAttribute3f(GLuint index)
 {
   ccVertexAttribute(index, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), NULL);
@@ -200,6 +296,16 @@ typedef struct ccGeometry
   uint32_t numVertices;
   uint32_t numIndices;
 } ccGeometry;
+
+static inline void ccGeometry_Destroy(ccGeometry *g)
+{
+  free(g->vertices);
+  free(g->colors);
+  free(g->indices);
+  g->vertices = NULL;
+  g->colors = NULL;
+  g->indices = NULL;
+}
 
 static GLuint CC_CURRENT_SHADER_PROGRAM;
 static GLuint CC_DEFAULT_SHADER_PROGRAM;
@@ -368,6 +474,26 @@ static inline void ccDrawPolyline(ccPolyline *l)
   glDrawArrays(GL_LINE_STRIP, 0, l->size / 3);
 }
 
+static inline void ccPolyline_Print(ccPolyline *l)
+{
+  printf("Num vertices: %zu\n", l->size / 3);
+  printf("Capacity: %zu\n", l->capacity / 3);
+  printf("Data: ");
+  for (size_t i = 0; i < l->size / 3; i++)
+  {
+    printf("[%f, ", l->vertices[i * 3]);
+    printf("%f, ", l->vertices[i * 3 + 1]);
+    printf("%f], ", l->vertices[i * 3 + 2]);
+  }
+  printf("\n");
+}
+
+static inline void ccPolyline_Destroy(ccPolyline *l)
+{
+  free(l->vertices);
+  l->vertices = NULL;
+}
+
 //
 // SHADERS
 //
@@ -394,9 +520,12 @@ static const char *CC_DEFAULT_VERTEX_SHADER =
     "uniform mat4 model;\n"
     "uniform mat4 view;\n"
     "out vec4 vColor;\n"
+    "out vec4 vPos; \n"
     "void main()\n"
     "{\n"
-    "   gl_Position = projection * view * model * vec4(aPos, 1.0);\n"
+    " vec4 outPos = projection * view * model * vec4(aPos, 1.0);"
+    "   gl_Position = outPos;\n"
+    "   vPos = outPos;\n"
     "   vColor = aColor;\n"
     "}\0";
 
@@ -535,6 +664,17 @@ static inline void ccResetShader()
   ccSetDefaultShaderUniforms(CC_DEFAULT_SHADER_PROGRAM);
 }
 
+static inline void ccTranslate(float x, float y, float z)
+{
+  CC_DEFAULT_MODEL_MATRIX =
+      glms_translated(CC_DEFAULT_MODEL_MATRIX, (vec3s){x, y, z});
+}
+
+void ccClearTransforms()
+{
+  CC_DEFAULT_MODEL_MATRIX = glms_mat4_identity();
+}
+
 #ifndef CC_NO_MAIN
 
 //
@@ -602,6 +742,9 @@ int main()
 
   glfwSetKeyCallback(CC_MAIN_WINDOW, ccOnKey);
   glViewport(0, 0, CC_CURRENT_WINDOW_WIDTH, CC_CURRENT_WINDOW_HEIGHT);
+
+  // Makes saving arbitrary frame sizes to PNG easier
+  glPixelStorei(GL_PACK_ALIGNMENT, 2);
 
   glGenVertexArrays(1, &CC_MAIN_VAO);
   glGenBuffers(1, &CC_MAIN_VBO);
