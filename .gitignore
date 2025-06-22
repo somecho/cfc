@@ -5,7 +5,4 @@ tmp/
 **/*.pch
 
 
-examples/clear
-examples/triangle
-examples/particles
-examples/fragmentShader
+bin/

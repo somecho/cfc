@@ -19,12 +19,12 @@ void configure(syApp *app)
 void setup(syApp *app)
 {
   (void)app;
-  syArrayF32Init(&a); // Arrays must always be initialized.
-  syArrayPush(a, 1);  // Push puts a value at the next available location.
-  syArrayPush(a, 2);  // It reallocates memory if it needs more.
+  syArrayInit(a);    // Arrays must always be initialized.
+  syArrayPush(a, 1); // Push puts a value at the next available location.
+  syArrayPush(a, 2); // It reallocates memory if it needs more.
   syArrayPush(a, 3);
   syArrayPush(a, 4);
-  syArrayF32Print(&a); // Helper for print debugging
+  syArrayPrint(a); // Helper for print debugging
 
   // Push and Destroy are macros to enable different kinds of arrays
   syArrayPush(a, 4);
