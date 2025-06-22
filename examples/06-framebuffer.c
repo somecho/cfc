@@ -11,7 +11,6 @@ syFbo fbo;
 
 void configure(syApp *app)
 {
-  (void)app;
 }
 
 void setup(syApp *app)

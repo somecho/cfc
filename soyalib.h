@@ -48,6 +48,7 @@
 
 typedef float f32;
 typedef int i32;
+typedef uint32_t u32;
 typedef uint64_t u64;
 typedef size_t usize;
 
@@ -177,21 +178,56 @@ static inline void syVertexAttribute4f(GLuint index);
 //
 
 typedef struct syArrayF32 syArrayF32;
-static inline void syArrayF32Init(syArrayF32 *arr);
-static inline void syArrayF32Print(syArrayF32 *arr);
+typedef struct syArrayU32 syArrayU32;
+
+#define syArrayInit(arr)                                                       \
+  (arr).len = 0;                                                               \
+  (arr).cap = 4;                                                               \
+  (arr).data = _Generic((arr.data),                                            \
+      float *: (float *)calloc((arr).cap, sizeof(float)),                      \
+      u32 *: (u32 *)calloc((arr).cap, sizeof(u32)));
+
+#define syArrayPrint(arr)                                                      \
+  printf("Length: %zu\n", arr.len);                                            \
+  printf("Capacity: %zu\n", arr.cap);                                          \
+  printf("Data: ");                                                            \
+  for (usize i = 0; i < arr.len; i++)                                          \
+  {                                                                            \
+    const char *fmt = _Generic((arr.data[i]), float: "%f ", u32: "%u ");       \
+    printf(fmt, arr.data[i]);                                                  \
+  }                                                                            \
+  printf("\n");
 
 #define syArrayDestroy(arr)                                                    \
   free(arr.data);                                                              \
   arr.data = NULL;
 
 #define syArrayPush(arr, val)                                                  \
-  if (arr.len + 1 >= arr.cap)                                                  \
+  if ((arr).len + 1 >= (arr).cap)                                              \
   {                                                                            \
-    arr.data = realloc(arr.data, arr.cap * 2 * sizeof(arr.data[0]));           \
-    arr.cap *= 2;                                                              \
+    (arr).data = realloc((arr).data, (arr).cap * 2 * sizeof((arr).data[0]));   \
+    (arr).cap *= 2;                                                            \
   }                                                                            \
-  arr.data[arr.len] = val;                                                     \
-  arr.len++;
+  (arr).data[(arr).len] = (val);                                               \
+  (arr).len++;
+
+#define syArrayPush3(arr, v1, v2, v3)                                          \
+  syArrayPush((arr), (v1));                                                    \
+  syArrayPush((arr), (v2));                                                    \
+  syArrayPush((arr), (v3));
+
+#define syArrayPush4(arr, v1, v2, v3, v4)                                      \
+  syArrayPush3((arr), (v1), (v2), (v3));                                       \
+  syArrayPush((arr), (v4));
+
+#define syArrayPushVec3(arr, vec3)                                             \
+  syArrayPush3((arr), (vec3).x, (vec3).y, (vec3).z);
+
+#define syArrayPush2Vec3(arr, vec3A, vec3B)                                    \
+  syArrayPushVec3(arr, vec3A);                                                 \
+  syArrayPushVec3(arr, vec3B);
+
+#define syArraySizeb(arr) arr.len == 0 ? 0 : sizeof(arr.data[0]) * arr.len
 
 ////////////////////////////////////////////////////////////
 //
@@ -363,6 +399,35 @@ static inline void syDrawUnindexed(syApp *app, float *vertices, float *colors,
 
   syShaderSetRendererUniforms(&app->renderer, app->renderer.shader);
   glDrawArrays(mode, 0, n);
+}
+
+static inline void syDrawIndexed(syApp *app, float *vertices, float *colors,
+                                 u32 *indices, usize numVertices,
+                                 usize numIndices, GLenum mode)
+{
+
+  glBindVertexArray(app->renderer.vao);
+
+  syWriteArrayBuffer(app->renderer.vbo, sizeof(float) * numVertices * 3,
+                     vertices);
+  syVertexAttribute3f(0);
+
+  if (colors == 0)
+  {
+    float *c = calloc(numVertices * 4, sizeof(float));
+    for (size_t i = 0; i < numVertices; i++)
+    {
+      memcpy(&c[i * 4], app->renderer.color, sizeof(app->renderer.color));
+    }
+    syWriteArrayBuffer(app->renderer.cbo, sizeof(float) * numVertices * 4, c);
+    free(c);
+  }
+  else
+  {
+    syWriteArrayBuffer(app->renderer.cbo, sizeof(float) * numVertices * 4,
+                       colors);
+  }
+  syVertexAttribute4f(1);
 }
 
 static inline void syDrawTriangle(syApp *app, float x1, float y1, float z1,
@@ -680,24 +745,11 @@ typedef struct syArrayF32
   usize len, cap;
 } syArrayF32;
 
-static inline void syArrayF32Init(syArrayF32 *arr)
+typedef struct syArrayU32
 {
-  arr->len = 0;
-  arr->cap = 4;
-  arr->data = (float *)calloc(arr->cap, sizeof(float));
-}
-
-static inline void syArrayF32Print(syArrayF32 *arr)
-{
-  printf("Length: %zu\n", arr->len);
-  printf("Capacity: %zu\n", arr->cap);
-  printf("Data: ");
-  for (size_t i = 0; i < arr->len; i++)
-  {
-    printf("%f ", arr->data[i]);
-  }
-  printf("\n");
-}
+  u32 *data;
+  usize len, cap;
+} syArrayU32;
 
 ////////////////////////////////////////////////////////////
 //
