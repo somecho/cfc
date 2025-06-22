@@ -47,6 +47,7 @@
 //
 
 typedef float f32;
+typedef int i32;
 typedef uint64_t u64;
 typedef size_t usize;
 
@@ -191,6 +192,22 @@ static inline void syArrayF32Print(syArrayF32 *arr);
   }                                                                            \
   arr.data[arr.len] = val;                                                     \
   arr.len++;
+
+////////////////////////////////////////////////////////////
+//
+// syFbo
+//
+
+typedef struct syFbo syFbo;
+
+static inline bool syFboAllocate(syFbo *fbo, i32 width, i32 height,
+                                 GLenum format);
+
+static inline void syFboBegin(syFbo *fbo);
+
+static inline void syFboEnd();
+
+static inline void syFboDraw(syApp *app, syFbo *fbo);
 
 ////////////////////////////////////////////////////////////
 //
@@ -478,6 +495,17 @@ static const char *SY_DEFAULT_FRAGMENT_SHADER =
     "   FragColor = vColor;\n"
     "}\n\0";
 
+static const char *SY_RGB_FBO_FRAGMENT_SHADER =
+    "#version 430 core\n"
+    "out vec3 color;\n"
+    "uniform sampler2D tex0;\n"
+    "uniform vec2 res;"
+    "void main()\n"
+    "{\n"
+    "  vec2 UV = gl_FragCoord.xy / res;"
+    "  color = texture(tex0, UV).xyz;"
+    "}\n\0";
+
 static inline GLuint syShaderProgramLoadFromSource(
     const char *fragmentShaderSource, const char *vertexShaderSource)
 {
@@ -669,6 +697,85 @@ static inline void syArrayF32Print(syArrayF32 *arr)
     printf("%f ", arr->data[i]);
   }
   printf("\n");
+}
+
+////////////////////////////////////////////////////////////
+//
+// syFbo
+//
+
+typedef struct syFbo
+{
+  GLuint framebuffer;
+  GLuint texture;
+  GLenum format;
+  syShader shader;
+} syFbo;
+
+static inline bool syFboAllocate(syFbo *fbo, i32 width, i32 height,
+                                 GLenum format)
+{
+  // Generate framebuffer
+  glGenFramebuffers(1, &fbo->framebuffer);
+  glBindFramebuffer(GL_FRAMEBUFFER, fbo->framebuffer);
+
+  // Generate texture
+  glGenTextures(1, &fbo->texture);
+
+  // Initialize and configure texture
+  glBindTexture(GL_TEXTURE_2D, fbo->texture);
+  glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format,
+               GL_UNSIGNED_BYTE, 0);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+  // Attach texture to Framebuffer's Color Attachment 0
+  glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fbo->texture, 0);
+
+  // Enable drawing to color attachment 0
+  GLenum drawBuffers[1] = {GL_COLOR_ATTACHMENT0};
+  glDrawBuffers(1, drawBuffers);
+
+  // Set viewport of framebuffer
+  glViewport(0, 0, width, height);
+
+  // Bind default framebuffer and texture
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  glBindTexture(GL_TEXTURE_2D, 0);
+
+  // TODO: Handle other FBO texture formats
+  if (format == GL_RGB)
+  {
+    fbo->shader = syShaderProgramLoadFromSource(SY_RGB_FBO_FRAGMENT_SHADER,
+                                                SY_DEFAULT_VERTEX_SHADER);
+  }
+  else
+  {
+    fbo->shader = syShaderProgramLoadFromSource(SY_RGB_FBO_FRAGMENT_SHADER,
+                                                SY_DEFAULT_VERTEX_SHADER);
+  }
+
+  // Return success
+  return glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
+}
+
+static inline void syFboBegin(syFbo *fbo)
+{
+  glBindFramebuffer(GL_FRAMEBUFFER, fbo->framebuffer);
+}
+
+static inline void syFboEnd()
+{
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+static inline void syFboDraw(syApp *app, syFbo *fbo)
+{
+  syShaderBegin(app, fbo->shader);
+  syShaderUniformTexture(fbo->shader, "tex0", fbo->texture);
+  syShaderUniform2f(fbo->shader, "res", app->width, app->height);
+  syDrawQuad(app, 0, 0, app->width, app->height);
+  syShaderEnd(app);
 }
 
 ////////////////////////////////////////////////////////////
