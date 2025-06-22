@@ -143,6 +143,8 @@ static inline bool syShaderCompileSuccess(const GLuint shader);
 
 static inline const char *syShaderInfoLog(const GLuint shader);
 
+static inline void syShaderBegin(syApp *app, syShader shader);
+
 ////////////////////////////////////////////////////////////
 //
 // BUFFERS
@@ -226,6 +228,7 @@ typedef struct syRenderer
 {
   GLuint vao, vbo, cbo, ibo;
   syShader shader;
+  syShader defaultShader;
   mat4s modelMatrix, viewMatrix, projectionMatrix;
   /* mat4s modelViewProjectionMatrix; */
   float color[4];
@@ -245,6 +248,7 @@ static inline void syRendererInit(syRenderer *r, int width, int height)
   r->viewMatrix = glms_translate_make((vec3s){{0, 0, -1}});
   r->modelMatrix = glms_mat4_identity();
   r->shader = syShaderProgramLoadDefault();
+  r->defaultShader = r->shader;
   glUseProgram(r->shader);
 }
 
@@ -356,7 +360,7 @@ static inline void syDrawQuad(syApp *app, float x, float y, float width,
                               float height)
 {
   float vertices[] = {x,         y,          0, x + width, y,          0,
-                      x + width, y - height, 0, x,         y - height, 0};
+                      x + width, y + height, 0, x,         y + height, 0};
   syDrawUnindexed(app, vertices, NULL, 4, GL_TRIANGLE_FAN);
 }
 
@@ -576,6 +580,18 @@ static inline const char *syShaderInfoLog(const GLuint shader)
   char *buffer = (char *)malloc(512);
   glGetShaderInfoLog(shader, 512, NULL, buffer);
   return buffer;
+}
+
+static inline void syShaderBegin(syApp *app, syShader shader)
+{
+  glUseProgram(shader);
+  app->renderer.shader = shader;
+}
+
+static inline void syShaderEnd(syApp *app)
+{
+  glUseProgram(app->renderer.defaultShader);
+  app->renderer.shader = app->renderer.defaultShader;
 }
 
 ////////////////////////////////////////////////////////////

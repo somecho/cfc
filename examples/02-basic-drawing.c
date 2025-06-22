@@ -26,7 +26,7 @@ void loop(syApp *app)
 
   syTranslate(app, app->width * 0.25, app->height * 0.75, 0);
   syRotate(app, app->time * 0.05, 0, 0, 1);
-  syDrawQuad(app, -100, 100, 200, 200);
+  syDrawQuad(app, -100, -100, 200, 200);
   syResetTransformations(app);
 
   sySetColor(app, SY_MAGENTA);
