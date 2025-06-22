@@ -11,7 +11,7 @@ args="$@"
 gcc  "$binary.c" \
     $args \
     -g \
-    -std=c23 \
+    -std=c11 \
     -lm -lglfw -lepoxy -lpng \
     -Wall -Wpedantic -Wextra \
     -o "../bin/examples/$binary"

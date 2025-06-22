@@ -541,7 +541,7 @@ static inline GLuint syShaderLoadFromSource(const char *shaderSource,
   glCompileShader(shader);
   if (!syShaderCompileSuccess(shader))
   {
-    auto log = syShaderInfoLog(shader);
+    const char *log = syShaderInfoLog(shader);
     perror(log);
     free((void *)log);
   }
@@ -560,7 +560,7 @@ static inline GLuint syShaderLoadFromFile(const char *shaderPath,
 
 static inline void syShaderSetRendererUniforms(syRenderer *r, syShader s)
 {
-  auto mat =
+  mat4s mat =
       glms_mul(r->projectionMatrix, (glms_mul(r->viewMatrix, r->modelMatrix)));
   syShaderUniformMat4fv(s, "modelViewProjectionMatrix", (float *)&mat);
 }
@@ -588,7 +588,7 @@ static inline void syShaderUniformMat4fv(GLuint shader, const char *uniformName,
 static inline void syShaderUniformTexture(GLuint shader, const char *name,
                                           GLuint texture)
 {
-  auto uTex = glGetUniformLocation(shader, name);
+  GLuint uTex = glGetUniformLocation(shader, name);
   glUniform1i(uTex, texture);
   glActiveTexture(GL_TEXTURE0 + texture);
   glBindTexture(GL_TEXTURE_2D, texture);
