@@ -1,3 +1,10 @@
+//
+// SOYALIB
+//
+
+#ifndef SOYA_LIB_H
+#define SOYA_LIB_H
+
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -13,14 +20,6 @@
 #include <epoxy/glx.h>
 
 #include <GLFW/glfw3.h>
-
-#ifndef SOYA_LIB_H
-#define SOYA_LIB_H
-
-// FORWARD DECLARATIONS
-
-static inline GLuint syLoadDefaultShaderProgram();
-/* static inline void sySetDefaultShaderUniforms(GLuint shader); */
 
 ////////////////////////////////////////////////////////////
 //
@@ -47,6 +46,7 @@ static inline GLuint syLoadDefaultShaderProgram();
 // TYPE ALIASES
 //
 
+typedef float f32;
 typedef uint64_t u64;
 typedef size_t usize;
 
@@ -114,11 +114,34 @@ static inline void syResetTransformations(syApp *app);
 // OpenGL Shader handle
 typedef GLuint syShader;
 
+static inline GLuint syShaderProgramLoadFromSource(
+    const char *fragmentShaderSource, const char *vertexShaderSource);
+
+static inline GLuint syShaderProgramLoadDefault();
+
+static inline GLuint syShaderLoadFromSource(const char *shaderSource,
+                                            GLenum shaderType);
+
+static inline GLuint syShaderLoadFromFile(const char *shaderPath,
+                                          GLenum shaderType);
+
 static inline void syShaderSetRendererUniforms(syRenderer *r, syShader s);
 
-static inline void syShaderSetUniformMat4fv(GLuint shader,
-                                            const char *uniformName,
-                                            const float *value);
+static inline void syShaderUniform1f(GLuint shader, const char *uniformName,
+                                     float f);
+
+static inline void syShaderUniform2f(GLuint shader, const char *uniformName,
+                                     float f1, float f2);
+
+static inline void syShaderUniformMat4fv(GLuint shader, const char *uniformName,
+                                         const float *value);
+
+static inline void syShaderUniformTexture(GLuint shader, const char *name,
+                                          GLuint texture);
+
+static inline bool syShaderCompileSuccess(const GLuint shader);
+
+static inline const char *syShaderInfoLog(const GLuint shader);
 
 ////////////////////////////////////////////////////////////
 //
@@ -144,6 +167,28 @@ static inline void syVertexAttribute2f(GLuint index);
 static inline void syVertexAttribute3f(GLuint index);
 
 static inline void syVertexAttribute4f(GLuint index);
+
+////////////////////////////////////////////////////////////
+//
+// DATA STRUCTURES
+//
+
+typedef struct syArrayF32 syArrayF32;
+static inline void syArrayF32Init(syArrayF32 *arr);
+static inline void syArrayF32Print(syArrayF32 *arr);
+
+#define syArrayDestroy(arr)                                                    \
+  free(arr.data);                                                              \
+  arr.data = NULL;
+
+#define syArrayPush(arr, val)                                                  \
+  if (arr.len + 1 >= arr.cap)                                                  \
+  {                                                                            \
+    arr.data = realloc(arr.data, arr.cap * 2 * sizeof(arr.data[0]));           \
+    arr.cap *= 2;                                                              \
+  }                                                                            \
+  arr.data[arr.len] = val;                                                     \
+  arr.len++;
 
 ////////////////////////////////////////////////////////////
 //
@@ -192,19 +237,15 @@ static inline void syRendererInit(syRenderer *r, int width, int height)
   glGenBuffers(1, &r->vbo);
   glGenBuffers(1, &r->cbo);
   glGenBuffers(1, &r->ibo);
-  r->shader = syLoadDefaultShaderProgram();
   r->color[0] = 1;
   r->color[1] = 1;
   r->color[2] = 1;
   r->color[3] = 1;
-  glUseProgram(r->shader);
-
   r->projectionMatrix = glms_ortho(0, width, 0, height, 0.1f, 100.0);
   r->viewMatrix = glms_translate_make((vec3s){{0, 0, -1}});
   r->modelMatrix = glms_mat4_identity();
-
-  /* r->modelViewProjectionMatrix = */
-  /*     glms_mul(projMat, (glms_mul(viewMat, modelMat))); */
+  r->shader = syShaderProgramLoadDefault();
+  glUseProgram(r->shader);
 }
 
 ////////////////////////////////////////////////////////////
@@ -433,28 +474,108 @@ static const char *SY_DEFAULT_FRAGMENT_SHADER =
     "   FragColor = vColor;\n"
     "}\n\0";
 
+static inline GLuint syShaderProgramLoadFromSource(
+    const char *fragmentShaderSource, const char *vertexShaderSource)
+{
+  const char *fsSrc = fragmentShaderSource == NULL ? SY_DEFAULT_FRAGMENT_SHADER
+                                                   : fragmentShaderSource;
+  const char *vsSrc = vertexShaderSource == NULL ? SY_DEFAULT_VERTEX_SHADER
+                                                 : vertexShaderSource;
+
+  const GLuint fs = syShaderLoadFromSource(fsSrc, GL_FRAGMENT_SHADER);
+  const GLuint vs = syShaderLoadFromSource(vsSrc, GL_VERTEX_SHADER);
+
+  const GLuint shader = glCreateProgram();
+
+  glAttachShader(shader, vs);
+  glAttachShader(shader, fs);
+  glLinkProgram(shader);
+  glDeleteShader(vs);
+  glDeleteShader(fs);
+  return shader;
+}
+
+static inline GLuint syShaderProgramLoadDefault()
+{
+  return syShaderProgramLoadFromSource(SY_DEFAULT_FRAGMENT_SHADER,
+                                       SY_DEFAULT_VERTEX_SHADER);
+}
+
+static inline GLuint syShaderLoadFromSource(const char *shaderSource,
+                                            GLenum shaderType)
+{
+  GLuint shader = glCreateShader(shaderType);
+  glShaderSource(shader, 1, &shaderSource, NULL);
+  glCompileShader(shader);
+  if (!syShaderCompileSuccess(shader))
+  {
+    auto log = syShaderInfoLog(shader);
+    perror(log);
+    free((void *)log);
+  }
+  return shader;
+}
+// @returns a `GLuint` representing the shader compiled from `shaderPath` and
+// given the `shaderType`. This operation may fail.
+static inline GLuint syShaderLoadFromFile(const char *shaderPath,
+                                          GLenum shaderType)
+{
+  const char *src = syReadFile(shaderPath);
+  GLuint shader = syShaderLoadFromSource(src, shaderType);
+  free((void *)src);
+  return shader;
+}
+
 static inline void syShaderSetRendererUniforms(syRenderer *r, syShader s)
 {
   auto mat =
       glms_mul(r->projectionMatrix, (glms_mul(r->viewMatrix, r->modelMatrix)));
-  syShaderSetUniformMat4fv(s, "modelViewProjectionMatrix", (float *)&mat);
+  syShaderUniformMat4fv(s, "modelViewProjectionMatrix", (float *)&mat);
+}
+static inline void syShaderUniform1f(GLuint shader, const char *uniformName,
+                                     float f)
+{
+  GLint u = glGetUniformLocation(shader, uniformName);
+  glUniform1f(u, f);
 }
 
-static inline void syShaderSetUniformMat4fv(GLuint shader,
-                                            const char *uniformName,
-                                            const float *value)
+static inline void syShaderUniform2f(GLuint shader, const char *uniformName,
+                                     float f1, float f2)
+{
+  GLint u = glGetUniformLocation(shader, uniformName);
+  glUniform2f(u, f1, f2);
+}
+
+static inline void syShaderUniformMat4fv(GLuint shader, const char *uniformName,
+                                         const float *value)
 {
   GLint u = glGetUniformLocation(shader, uniformName);
   glUniformMatrix4fv(u, 1, GL_FALSE, value);
 }
 
-static inline void syShaderSetUniformTexture(GLuint shader, const char *name,
-                                             GLuint texture)
+static inline void syShaderUniformTexture(GLuint shader, const char *name,
+                                          GLuint texture)
 {
   auto uTex = glGetUniformLocation(shader, name);
   glUniform1i(uTex, texture);
   glActiveTexture(GL_TEXTURE0 + texture);
   glBindTexture(GL_TEXTURE_2D, texture);
+}
+
+// @returns `true` if `shader` has compiled susyessfully. Otherwise `false`.
+static inline bool syShaderCompileSuccess(const GLuint shader)
+{
+  int susyess;
+  glGetShaderiv(shader, GL_COMPILE_STATUS, &susyess);
+  return susyess == 1;
+}
+
+// @returns the info log to `shader` as a `const char *` owned by the caller.
+static inline const char *syShaderInfoLog(const GLuint shader)
+{
+  char *buffer = (char *)malloc(512);
+  glGetShaderInfoLog(shader, 512, NULL, buffer);
+  return buffer;
 }
 
 ////////////////////////////////////////////////////////////
@@ -502,6 +623,36 @@ static inline void syVertexAttribute3f(GLuint index)
 static inline void syVertexAttribute4f(GLuint index)
 {
   syVertexAttribute(index, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), NULL);
+}
+
+////////////////////////////////////////////////////////////
+//
+// DATA STRUCTURES
+//
+
+typedef struct syArrayF32
+{
+  f32 *data;
+  usize len, cap;
+} syArrayF32;
+
+static inline void syArrayF32Init(syArrayF32 *arr)
+{
+  arr->len = 0;
+  arr->cap = 4;
+  arr->data = (float *)calloc(arr->cap, sizeof(float));
+}
+
+static inline void syArrayF32Print(syArrayF32 *arr)
+{
+  printf("Length: %zu\n", arr->len);
+  printf("Capacity: %zu\n", arr->cap);
+  printf("Data: ");
+  for (size_t i = 0; i < arr->len; i++)
+  {
+    printf("%f ", arr->data[i]);
+  }
+  printf("\n");
 }
 
 ////////////////////////////////////////////////////////////
@@ -638,160 +789,6 @@ static inline bool syMainInit();
 // available.
 static inline bool syMainPostConfigure(syApp *app);
 
-typedef struct syPolyline
-{
-  float *vertices;
-  // num floats
-  size_t size;
-  // num floats
-  size_t capacity;
-} syPolyline;
-
-static inline void syPolyline_init(syPolyline *l)
-{
-  size_t initialCapacity = 30;
-  l->vertices = (float *)malloc(sizeof(float) * initialCapacity);
-  l->size = 0;
-  l->capacity = initialCapacity;
-}
-
-static inline void syPolyline_addVertex(syPolyline *l, float x, float y,
-                                        float z)
-{
-  if (l->size + 3 >= l->capacity)
-  {
-    l->vertices =
-        (float *)realloc(l->vertices, l->capacity * 2 * sizeof(float));
-    l->capacity *= 2;
-  }
-  l->vertices[l->size] = x;
-  l->vertices[l->size + 1] = y;
-  l->vertices[l->size + 2] = z;
-  l->size += 3;
-}
-
-static inline void syPolyline_Print(syPolyline *l)
-{
-  printf("Num vertices: %zu\n", l->size / 3);
-  printf("Capacity: %zu\n", l->capacity / 3);
-  printf("Data: ");
-  for (size_t i = 0; i < l->size / 3; i++)
-  {
-    printf("[%f, ", l->vertices[i * 3]);
-    printf("%f, ", l->vertices[i * 3 + 1]);
-    printf("%f], ", l->vertices[i * 3 + 2]);
-  }
-  printf("\n");
-}
-
-static inline void syPolyline_Destroy(syPolyline *l)
-{
-  free(l->vertices);
-  l->vertices = NULL;
-}
-
-// @returns `true` if `shader` has compiled susyessfully. Otherwise `false`.
-static inline bool syShaderCompileSuccess(const GLuint shader)
-{
-  int susyess;
-  glGetShaderiv(shader, GL_COMPILE_STATUS, &susyess);
-  return susyess == 1;
-}
-
-// @returns the info log to `shader` as a `const char *` owned by the caller.
-static inline const char *syGetShaderInfoLog(const GLuint shader)
-{
-  char *buffer = (char *)malloc(512);
-  glGetShaderInfoLog(shader, 512, NULL, buffer);
-  return buffer;
-}
-
-// @returns a `GLuint` representing the shader compiled, given the
-// `shaderSource` string and the `shaderType`. This operation may fail.
-static inline GLuint syLoadShaderFromSource(const char *shaderSource,
-                                            GLenum shaderType)
-{
-  GLuint shader = glCreateShader(shaderType);
-  glShaderSource(shader, 1, &shaderSource, NULL);
-  glCompileShader(shader);
-  if (!syShaderCompileSuccess(shader))
-  {
-    perror(syGetShaderInfoLog(shader));
-  }
-  return shader;
-}
-
-// @returns a `GLuint` representing the shader compiled from `shaderPath` and
-// given the `shaderType`. This operation may fail.
-static inline GLuint syLoadShader(const char *shaderPath, GLenum shaderType)
-{
-  const char *src = syReadFile(shaderPath);
-  GLuint shader = syLoadShaderFromSource(src, shaderType);
-  free((void *)src);
-  return shader;
-}
-
-// @returns a shader compiled with the shader source strings. If either
-// `fragmentShaderSource` or `vertexShaderSource` is `NULL`, the respective
-// default shaders will be used instead.
-static inline GLuint syCreateShaderProgramFromSource(
-    const char *fragmentShaderSource, const char *vertexShaderSource)
-{
-  const char *fsSrc = fragmentShaderSource == NULL ? SY_DEFAULT_FRAGMENT_SHADER
-                                                   : fragmentShaderSource;
-  const char *vsSrc = vertexShaderSource == NULL ? SY_DEFAULT_VERTEX_SHADER
-                                                 : vertexShaderSource;
-
-  const GLuint fs = syLoadShaderFromSource(fsSrc, GL_FRAGMENT_SHADER);
-  const GLuint vs = syLoadShaderFromSource(vsSrc, GL_VERTEX_SHADER);
-
-  const GLuint shader = glCreateProgram();
-
-  glAttachShader(shader, vs);
-  glAttachShader(shader, fs);
-  glLinkProgram(shader);
-  glDeleteShader(vs);
-  glDeleteShader(fs);
-  return shader;
-}
-
-// Creates and returns the default shader program used by the main renderer.
-static inline GLuint syLoadDefaultShaderProgram()
-{
-  return syCreateShaderProgramFromSource(SY_DEFAULT_FRAGMENT_SHADER,
-                                         SY_DEFAULT_VERTEX_SHADER);
-}
-
-static inline void sySetUniform1f(GLuint shader, const char *uniformName,
-                                  float f)
-{
-  GLint u = glGetUniformLocation(shader, uniformName);
-  glUniform1f(u, f);
-}
-
-static inline void sySetUniform2f(GLuint shader, const char *uniformName,
-                                  float f1, float f2)
-{
-  GLint u = glGetUniformLocation(shader, uniformName);
-  glUniform2f(u, f1, f2);
-}
-
-static inline void sySetUniformMat4fv(GLuint shader, const char *uniformName,
-                                      bool transpose, const float *value)
-{
-  GLint u = glGetUniformLocation(shader, uniformName);
-  glUniformMatrix4fv(u, 1, transpose, value);
-}
-
-static inline void sySetUniformTexture(GLuint shader, const char *name,
-                                       GLuint texture)
-{
-  auto uTex = glGetUniformLocation(shader, name);
-  glUniform1i(uTex, texture);
-  glActiveTexture(GL_TEXTURE0 + texture);
-  glBindTexture(GL_TEXTURE_2D, texture);
-}
-
 ////////////////////////////////////////////////////////////
 //
 // GLFW CALLBACKS
@@ -887,36 +884,9 @@ int main()
   glfwSetFramebufferSizeCallback(app.window, syOnFrameBufferSize);
   glfwSetKeyCallback(app.window, syOnKey);
 
-  /* glGenVertexArrays(1, &SY_MAIN_VAO); */
-  /* glGenBuffers(1, &SY_MAIN_VBO); */
-  /* glGenBuffers(1, &SY_MAIN_CBO); */
-  /* glGenBuffers(1, &SY_MAIN_IBO); */
-  /* SY_CURRENT_SHADER_PROGRAM = syLoadDefaultShaderProgram(); */
-  /* SY_DEFAULT_SHADER_PROGRAM = SY_CURRENT_SHADER_PROGRAM; */
-  /* glUseProgram(SY_CURRENT_SHADER_PROGRAM); */
-
-  /* SY_DEFAULT_PROJECTION_MATRIX = glms_ortho( */
-  /*     0, SY_CURRENT_WINDOW_WIDTH, 0, SY_CURRENT_WINDOW_HEIGHT, 0.1f, 100.0);
-   */
-  /* SY_DEFAULT_VIEW_MATRIX = glms_translate_make((vec3s){{0, 0, -1}}); */
-  /* SY_DEFAULT_MODEL_MATRIX = glms_mat4_identity(); */
-
   double prevTime = glfwGetTime();
   while (!glfwWindowShouldClose(app.window))
   {
-    /* GLint umodel = glGetUniformLocation(SY_CURRENT_SHADER_PROGRAM, "model");
-     */
-    /* GLint uview = glGetUniformLocation(SY_CURRENT_SHADER_PROGRAM, "view"); */
-    /* GLint uprojection = */
-    /*     glGetUniformLocation(SY_CURRENT_SHADER_PROGRAM, "projection"); */
-
-    /* glUniformMatrix4fv(umodel, 1, GL_FALSE, */
-    /*                    (float *)&SY_DEFAULT_MODEL_MATRIX.raw); */
-    /* glUniformMatrix4fv(uview, 1, GL_FALSE, */
-    /*                    (float *)&SY_DEFAULT_VIEW_MATRIX.raw); */
-    /* glUniformMatrix4fv(uprojection, 1, GL_FALSE, */
-    /*                    (float *)&SY_DEFAULT_PROJECTION_MATRIX.raw); */
-
     loop(&app);
     glfwSwapBuffers(app.window);
     glfwPollEvents();
