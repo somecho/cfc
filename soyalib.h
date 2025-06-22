@@ -20,7 +20,7 @@
 // FORWARD DECLARATIONS
 
 static inline GLuint syLoadDefaultShaderProgram();
-static inline void sySetDefaultShaderUniforms(GLuint shader);
+/* static inline void sySetDefaultShaderUniforms(GLuint shader); */
 
 ////////////////////////////////////////////////////////////
 //
@@ -44,12 +44,27 @@ static inline void sySetDefaultShaderUniforms(GLuint shader);
 
 ////////////////////////////////////////////////////////////
 //
-// TYPEDEFS
+// TYPE ALIASES
 //
 
 typedef uint64_t u64;
+typedef size_t usize;
+
+////////////////////////////////////////////////////////////
+//
+// syRenderer
+//
+
+typedef struct syRenderer syRenderer;
+static inline void syRendererInit(syRenderer *r, int width, int height);
+
+////////////////////////////////////////////////////////////
+//
+// syApp
+//
 
 typedef struct syApp syApp;
+static inline void syAppPreConfigure(syApp *app);
 
 ////////////////////////////////////////////////////////////
 //
@@ -57,6 +72,78 @@ typedef struct syApp syApp;
 //
 
 static inline void syClear(float r, float g, float b, float a);
+
+static inline void sySetColor(syApp *app, float r, float g, float b, float a);
+
+static inline void syDrawUnindexed(syApp *app, float *vertices, float *colors,
+                                   usize n, GLenum mode);
+
+static inline void syDrawTriangle(syApp *app, float x1, float y1, float z1,
+                                  float x2, float y2, float z2, float x3,
+                                  float y3, float z3);
+
+static inline void syDrawQuad(syApp *app, float x, float y, float width,
+                              float height);
+
+static inline void syDrawLine(syApp *app, float x1, float y1, float z1,
+                              float x2, float y2, float z2);
+
+static inline void syDrawLines(syApp *app, float *vertices, int n);
+
+static inline void syDrawPolygon(syApp *app, float x, float y, float z,
+                                 float radius, usize numSides);
+
+////////////////////////////////////////////////////////////
+//
+// TRANSFORMATIONS
+//
+
+static inline void syTranslate(syApp *app, float x, float y, float z);
+
+// @param angle Angle in degrees
+static inline void syRotate(syApp *app, float angle, float x, float y, float z);
+
+// Reset model matrix to identity (default)
+static inline void syResetTransformations(syApp *app);
+
+////////////////////////////////////////////////////////////
+//
+// syShader
+//
+
+// OpenGL Shader handle
+typedef GLuint syShader;
+
+static inline void syShaderSetRendererUniforms(syRenderer *r, syShader s);
+
+static inline void syShaderSetUniformMat4fv(GLuint shader,
+                                            const char *uniformName,
+                                            const float *value);
+
+////////////////////////////////////////////////////////////
+//
+// BUFFERS
+//
+
+static inline void syWriteBuffer(GLenum target, GLuint buffer, GLsizeiptr size,
+                                 const void *data, GLenum usage);
+
+static inline void syWriteArrayBuffer(GLuint buffer, size_t size, void *data);
+
+////////////////////////////////////////////////////////////
+//
+// VERTEX ATTRIBUTES
+//
+
+static inline void syVertexAttribute(GLuint index, GLint size, GLenum type,
+                                     GLboolean normalized, GLsizei stride,
+                                     const void *pointer);
+
+static inline void syVertexAttribute2f(GLuint index);
+
+static inline void syVertexAttribute3f(GLuint index);
+
+static inline void syVertexAttribute4f(GLuint index);
 
 ////////////////////////////////////////////////////////////
 //
@@ -69,6 +156,353 @@ static inline int syWriteFrameRGB(const char *filename, int width, int height);
 
 static inline int syWritePngRGB(const char *filename, void *data, int width,
                                 int height);
+
+////////////////////////////////////////////////////////////
+//
+// USER IMPLEMENTED
+//
+
+extern void configure(syApp *app);
+extern void setup(syApp *app);
+extern void loop(syApp *app);
+
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////
+//
+// syRenderer
+//
+
+typedef struct syRenderer
+{
+  GLuint vao, vbo, cbo, ibo;
+  syShader shader;
+  mat4s modelMatrix, viewMatrix, projectionMatrix;
+  /* mat4s modelViewProjectionMatrix; */
+  float color[4];
+} syRenderer;
+
+static inline void syRendererInit(syRenderer *r, int width, int height)
+{
+  glGenVertexArrays(1, &r->vao);
+  glGenBuffers(1, &r->vbo);
+  glGenBuffers(1, &r->cbo);
+  glGenBuffers(1, &r->ibo);
+  r->shader = syLoadDefaultShaderProgram();
+  r->color[0] = 1;
+  r->color[1] = 1;
+  r->color[2] = 1;
+  r->color[3] = 1;
+  glUseProgram(r->shader);
+
+  r->projectionMatrix = glms_ortho(0, width, 0, height, 0.1f, 100.0);
+  r->viewMatrix = glms_translate_make((vec3s){{0, 0, -1}});
+  r->modelMatrix = glms_mat4_identity();
+
+  /* r->modelViewProjectionMatrix = */
+  /*     glms_mul(projMat, (glms_mul(viewMat, modelMat))); */
+}
+
+////////////////////////////////////////////////////////////
+//
+// syApp
+//
+
+typedef struct syApp
+{
+  // Window width. Default: 1280
+  int width;
+
+  // Window height. Default: 720
+  int height;
+
+  // Pointer to app's window
+  GLFWwindow *window;
+
+  // Window title. Default: empty string
+  const char *title;
+
+  // Major OpenGL version number. Default: 4
+  int glVersionMajor;
+
+  // Major OpenGL version number. Default: 3
+  int glVersionMinor;
+
+  // Number of samples used for multisampling. Default: 8
+  int samples;
+
+  // Current frame number.
+  u64 frameNum;
+
+  // Current frame rate.
+  float fps;
+
+  // Time in seconds since initialization.
+  double time;
+
+  syRenderer renderer;
+} syApp;
+
+static inline void syAppPreConfigure(syApp *app)
+{
+  app->width = SY_DEFAULT_WINDOW_WIDTH;
+  app->height = SY_DEFAULT_WINDOW_HEIGHT;
+  app->samples = SY_DEFAULT_WINDOW_SAMPLES;
+  app->title = "";
+  app->glVersionMajor = SY_DEFAULT_GL_VERSION_MAJOR;
+  app->glVersionMinor = SY_DEFAULT_GL_VERSION_MINOR;
+}
+
+////////////////////////////////////////////////////////////
+//
+// DRAWING
+//
+
+static inline void syClear(float r, float g, float b, float a)
+{
+  glClearColor(r, g, b, a);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+static inline void sySetColor(syApp *app, float r, float g, float b, float a)
+{
+  app->renderer.color[0] = r;
+  app->renderer.color[1] = g;
+  app->renderer.color[2] = b;
+  app->renderer.color[3] = a;
+}
+
+static inline void syDrawUnindexed(syApp *app, float *vertices, float *colors,
+                                   usize n, GLenum mode)
+{
+  glBindVertexArray(app->renderer.vao);
+  syWriteArrayBuffer(app->renderer.vbo, sizeof(float) * n * 3, vertices);
+  syVertexAttribute3f(0);
+
+  if (colors == 0)
+  {
+    float *c = calloc(n * 4, sizeof(float));
+    for (size_t i = 0; i < n; i++)
+    {
+      memcpy(&c[i * 4], app->renderer.color, sizeof(app->renderer.color));
+    }
+    syWriteArrayBuffer(app->renderer.cbo, sizeof(float) * n * 4, c);
+    free(c);
+  }
+  else
+  {
+    syWriteArrayBuffer(app->renderer.cbo, sizeof(float) * n * 4, colors);
+  }
+  syVertexAttribute4f(1);
+
+  syShaderSetRendererUniforms(&app->renderer, app->renderer.shader);
+  glDrawArrays(mode, 0, n);
+}
+
+static inline void syDrawTriangle(syApp *app, float x1, float y1, float z1,
+                                  float x2, float y2, float z2, float x3,
+                                  float y3, float z3)
+{
+  float vertices[] = {x1, y1, z1, x2, y2, z2, x3, y3, z3};
+  syDrawUnindexed(app, vertices, NULL, 3, GL_TRIANGLES);
+}
+
+static inline void syDrawQuad(syApp *app, float x, float y, float width,
+                              float height)
+{
+  float vertices[] = {x,         y,          0, x + width, y,          0,
+                      x + width, y - height, 0, x,         y - height, 0};
+  syDrawUnindexed(app, vertices, NULL, 4, GL_TRIANGLE_FAN);
+}
+
+static inline void syDrawLine(syApp *app, float x1, float y1, float z1,
+                              float x2, float y2, float z2)
+{
+  float vertices[] = {x1, y1, z1, x2, y2, z2};
+  syDrawUnindexed(app, vertices, NULL, 2, GL_LINES);
+}
+
+static inline void syDrawLines(syApp *app, float *vertices, int n)
+{
+  syDrawUnindexed(app, vertices, NULL, n, GL_LINE_STRIP);
+}
+
+static inline void syDrawPolygon(syApp *app, float x, float y, float z,
+                                 float radius, usize numSides)
+{
+  if (numSides < 3)
+  {
+    perror("numSides must be greater than 3");
+  }
+  usize numItems = numSides + 2; // 1 extra for the center and 1 for the end
+  float *vertices = (float *)calloc(numItems * 3, sizeof(float));
+
+  vertices[0] = x;
+  vertices[1] = y;
+  vertices[2] = z;
+
+  float t = GLM_PI * 2.f / (float)numSides;
+  for (size_t i = 0; i < numSides; i++)
+  {
+    vertices[(i + 1) * 3] = cosf(t * i) * radius + x;
+    vertices[(i + 1) * 3 + 1] = sinf(t * i) * radius + y;
+    vertices[(i + 1) * 3 + 2] = 0;
+  }
+
+  vertices[numItems * 3 - 3] = vertices[3];
+  vertices[numItems * 3 - 2] = vertices[4];
+  vertices[numItems * 3 - 1] = vertices[5];
+
+  syDrawUnindexed(app, vertices, NULL, numSides + 2, GL_TRIANGLE_FAN);
+}
+
+////////////////////////////////////////////////////////////
+//
+// TRANSFORMATIONS
+//
+
+static inline void syTranslate(syApp *app, float x, float y, float z)
+{
+  app->renderer.modelMatrix =
+      glms_translate(app->renderer.modelMatrix, (vec3s){{x, y, z}});
+}
+
+static inline void syRotate(syApp *app, float angle, float x, float y, float z)
+{
+
+  app->renderer.modelMatrix =
+      glms_rotate(app->renderer.modelMatrix, angle, (vec3s){{x, y, z}});
+}
+
+static inline void syResetTransformations(syApp *app)
+{
+  app->renderer.modelMatrix = glms_mat4_identity();
+}
+
+////////////////////////////////////////////////////////////
+//
+// syShader
+//
+
+// Attributes:
+// - location 0 - vec3 aPos
+// - location 1 - vec4 aColor
+//
+// Uniforms:
+// - mat4 projection
+// - mat4 model
+// - mat4 view
+//
+// Outputs:
+// - vec4 vColor
+// - vec4 vPos
+static const char *SY_DEFAULT_VERTEX_SHADER =
+    "#version 430 core\n"
+    "layout (location = 0) in vec3 aPos;\n"
+    "layout (location = 1) in vec4 aColor;\n"
+    "uniform mat4 modelViewProjectionMatrix;\n"
+    "uniform mat4 projection;\n"
+    "uniform mat4 model;\n"
+    "uniform mat4 view;\n"
+    "out vec4 vColor;\n"
+    "out vec4 vPos; \n"
+    "void main()\n"
+    "{\n"
+    /* "   vec4 outPos = projection * view * model * vec4(aPos, 1.0);" */
+    "   vec4 outPos = modelViewProjectionMatrix * vec4(aPos, 1.0);"
+    "   gl_Position = outPos;\n"
+    "   vPos = outPos;\n"
+    "   vColor = aColor;\n"
+    "}\0";
+
+// Inputs:
+// - vec4 vColor
+//
+// Outputs:
+// - location 0 - vec4 FragColor
+static const char *SY_DEFAULT_FRAGMENT_SHADER =
+    "#version 430 core\n"
+    "in vec4 vColor;\n"
+    "layout (location = 0) out vec4 FragColor;\n"
+    "void main()\n"
+    "{\n"
+    "   FragColor = vColor;\n"
+    "}\n\0";
+
+static inline void syShaderSetRendererUniforms(syRenderer *r, syShader s)
+{
+  auto mat =
+      glms_mul(r->projectionMatrix, (glms_mul(r->viewMatrix, r->modelMatrix)));
+  syShaderSetUniformMat4fv(s, "modelViewProjectionMatrix", (float *)&mat);
+}
+
+static inline void syShaderSetUniformMat4fv(GLuint shader,
+                                            const char *uniformName,
+                                            const float *value)
+{
+  GLint u = glGetUniformLocation(shader, uniformName);
+  glUniformMatrix4fv(u, 1, GL_FALSE, value);
+}
+
+static inline void syShaderSetUniformTexture(GLuint shader, const char *name,
+                                             GLuint texture)
+{
+  auto uTex = glGetUniformLocation(shader, name);
+  glUniform1i(uTex, texture);
+  glActiveTexture(GL_TEXTURE0 + texture);
+  glBindTexture(GL_TEXTURE_2D, texture);
+}
+
+////////////////////////////////////////////////////////////
+//
+// BUFFERS
+//
+
+static inline void syWriteBuffer(GLenum target, GLuint buffer, GLsizeiptr size,
+                                 const void *data, GLenum usage)
+{
+  glBindBuffer(target, buffer);
+  glBufferData(target, size, data, usage);
+}
+
+static inline void syWriteArrayBuffer(GLuint buffer, size_t size, void *data)
+{
+  syWriteBuffer(GL_ARRAY_BUFFER, buffer, size, data, GL_DYNAMIC_DRAW);
+}
+
+////////////////////////////////////////////////////////////
+//
+// VERTEX ATTRIBUTES
+//
+
+// Shorthand for calling `glVertexAttribPointer` and
+// `glEnableVertexAttribArray`.
+static inline void syVertexAttribute(GLuint index, GLint size, GLenum type,
+                                     GLboolean normalized, GLsizei stride,
+                                     const void *pointer)
+{
+  glVertexAttribPointer(index, size, type, normalized, stride, pointer);
+  glEnableVertexAttribArray(index);
+}
+
+static inline void syVertexAttribute2f(GLuint index)
+{
+  syVertexAttribute(index, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), NULL);
+}
+
+static inline void syVertexAttribute3f(GLuint index)
+{
+  syVertexAttribute(index, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), NULL);
+}
+
+static inline void syVertexAttribute4f(GLuint index)
+{
+  syVertexAttribute(index, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), NULL);
+}
 
 ////////////////////////////////////////////////////////////
 //
@@ -192,67 +626,17 @@ static inline int syWritePngRGB(const char *filename, void *data, int width,
 
 ////////////////////////////////////////////////////////////
 //
-// DRAWING
+// LIFECYLE HOOKS
 //
 
-static inline void syClear(float r, float g, float b, float a)
-{
-  glClearColor(r, g, b, a);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-}
+// Called at the very beginning, before `syAppPreConfigure`, `configure`,
+// `syMainPostConfigure` and `setup`.
+static inline bool syMainInit();
 
-static GLuint SY_MAIN_VAO;
-static GLuint SY_MAIN_VBO;
-static GLuint SY_MAIN_CBO;
-static GLuint SY_MAIN_IBO;
-
-// Binds `buffer` to `target` and writes `data` to it.
-static inline void syWriteBuffer(GLenum target, GLuint buffer, GLsizeiptr size,
-                                 const void *data, GLenum usage)
-{
-  glBindBuffer(target, buffer);
-  glBufferData(target, size, data, usage);
-}
-
-static inline void syWriteMainIndexBuffer(size_t numIndices, uint32_t *indices)
-{
-  syWriteBuffer(GL_ELEMENT_ARRAY_BUFFER, SY_MAIN_IBO,
-                numIndices * sizeof(uint32_t), indices, GL_DYNAMIC_DRAW);
-}
-
-static inline void syWriteArrayBuffer(GLuint buffer, size_t size, void *data)
-{
-  syWriteBuffer(GL_ARRAY_BUFFER, buffer, size, data, GL_DYNAMIC_DRAW);
-}
-
-// Shorthand for calling `glVertexAttribPointer` and
-// `glEnableVertexAttribArray`.
-static inline void syVertexAttribute(GLuint index, GLint size, GLenum type,
-                                     GLboolean normalized, GLsizei stride,
-                                     const void *pointer)
-{
-  glVertexAttribPointer(index, size, type, normalized, stride, pointer);
-  glEnableVertexAttribArray(index);
-}
-
-static inline void syVertexAttribute2f(GLuint index)
-{
-  syVertexAttribute(index, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), NULL);
-}
-
-static inline void syVertexAttribute3f(GLuint index)
-{
-  syVertexAttribute(index, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), NULL);
-}
-
-static inline void syVertexAttribute4f(GLuint index)
-{
-  syVertexAttribute(index, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), NULL);
-}
-
-//
-// DRAWING
-//
+// Called after `syMainInit`, `syAppPreConfigure`, `configure` and before
+// `setup`. After this is called, the default window GL context becomes
+// available.
+static inline bool syMainPostConfigure(syApp *app);
 
 typedef struct syGeometry
 {
@@ -273,111 +657,6 @@ static inline void syGeometry_Destroy(syGeometry *g)
   g->vertices = NULL;
   g->colors = NULL;
   g->indices = NULL;
-}
-
-static GLuint SY_CURRENT_SHADER_PROGRAM;
-static GLuint SY_DEFAULT_SHADER_PROGRAM;
-static float SY_CURRENT_RENDER_COLOR[4];
-
-// Sets the color the main renderer will use for subsequent draw calls.
-// @param r,g,b,a Normalized values from 0-1.
-static inline void sySetColor(float r, float g, float b, float a)
-{
-  SY_CURRENT_RENDER_COLOR[0] = r;
-  SY_CURRENT_RENDER_COLOR[1] = g;
-  SY_CURRENT_RENDER_COLOR[2] = b;
-  SY_CURRENT_RENDER_COLOR[3] = a;
-}
-
-// Draws a triangle to the screen.
-// @param x1,y1,z1 The first corner of the triangle.
-// @param x2,y2,z2 The second corner of the triangle.
-// @param x3,y3,z3 The third corner of the triangle.
-static inline void syDrawTriangle(float x1, float y1, float z1, float x2,
-                                  float y2, float z2, float x3, float y3,
-                                  float z3)
-{
-  glBindVertexArray(SY_MAIN_VAO);
-
-  float vertices[] = {x1, y1, z1, x2, y2, z2, x3, y3, z3};
-  syWriteBuffer(GL_ARRAY_BUFFER, SY_MAIN_VBO, sizeof(vertices), vertices,
-                GL_DYNAMIC_DRAW);
-  syVertexAttribute(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), NULL);
-
-  float colors[12];
-  for (size_t i = 0; i < 3; i++)
-  {
-    memcpy(&colors[i * 4], SY_CURRENT_RENDER_COLOR, sizeof(float) * 4);
-  }
-  syWriteBuffer(GL_ARRAY_BUFFER, SY_MAIN_CBO, sizeof(colors), colors,
-                GL_DYNAMIC_DRAW);
-  syVertexAttribute(1, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), NULL);
-
-  sySetDefaultShaderUniforms(SY_CURRENT_SHADER_PROGRAM);
-  glDrawArrays(GL_TRIANGLES, 0, 3);
-}
-
-// Draws a quad to the screen at z = 0.
-// @param x, y The top left of the quad
-// @param w, h The width and height of the quad
-static inline void syDrawQuad(float x, float y, float w, float h)
-{
-  float vertices[] = {x,     y,     0, // TOP LEFT
-                      x + w, y,     0, // TOP RIGHT
-                      x + w, y + h, 0, // BOTTOM RIGHT
-                      x,     y + h, 0};
-  glBindVertexArray(SY_MAIN_VAO);
-  syWriteBuffer(GL_ARRAY_BUFFER, SY_MAIN_VBO, sizeof(vertices), vertices,
-                GL_DYNAMIC_DRAW);
-  syVertexAttribute(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), NULL);
-
-  float colors[16];
-  for (size_t i = 0; i < 4; i++)
-  {
-    memcpy(&colors[i * 4], SY_CURRENT_RENDER_COLOR, sizeof(float) * 4);
-  }
-  syWriteBuffer(GL_ARRAY_BUFFER, SY_MAIN_CBO, sizeof(colors), colors,
-                GL_DYNAMIC_DRAW);
-  syVertexAttribute(1, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), NULL);
-
-  sySetDefaultShaderUniforms(SY_CURRENT_SHADER_PROGRAM);
-  glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-}
-
-static inline void syDrawGeometry(syGeometry *geom, GLenum mode)
-{
-  glBindVertexArray(SY_MAIN_VAO);
-
-  syWriteMainIndexBuffer(geom->numIndices, geom->indices);
-
-  syWriteArrayBuffer(SY_MAIN_VBO, geom->numVertices * 3 * sizeof(float),
-                     geom->vertices);
-  syVertexAttribute3f(0);
-
-  syWriteArrayBuffer(SY_MAIN_CBO, geom->numVertices * 4 * sizeof(float),
-                     geom->colors);
-  syVertexAttribute4f(1);
-
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, SY_MAIN_IBO);
-  sySetDefaultShaderUniforms(SY_CURRENT_SHADER_PROGRAM);
-  glDrawElements(mode, geom->numIndices, GL_UNSIGNED_INT, 0);
-}
-
-static inline void syDrawGeometryUnindexed(syGeometry *geom, GLenum mode)
-{
-  glBindVertexArray(SY_MAIN_VAO);
-
-  syWriteBuffer(GL_ARRAY_BUFFER, SY_MAIN_VBO,
-                geom->numVertices * 3 * sizeof(float), geom->vertices,
-                GL_DYNAMIC_DRAW);
-  syVertexAttribute(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), NULL);
-
-  syWriteBuffer(GL_ARRAY_BUFFER, SY_MAIN_CBO,
-                geom->numVertices * 4 * sizeof(float), geom->colors,
-                GL_DYNAMIC_DRAW);
-  syVertexAttribute(1, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), NULL);
-  sySetDefaultShaderUniforms(SY_CURRENT_SHADER_PROGRAM);
-  glDrawArrays(mode, 0, geom->numVertices);
 }
 
 typedef struct syPolyline
@@ -412,28 +691,6 @@ static inline void syPolyline_addVertex(syPolyline *l, float x, float y,
   l->size += 3;
 }
 
-static inline void syDrawPolyline(syPolyline *l)
-{
-  size_t numVertices = l->size / 3;
-  glBindVertexArray(SY_MAIN_VAO);
-
-  syWriteBuffer(GL_ARRAY_BUFFER, SY_MAIN_VBO, l->size * sizeof(float),
-                l->vertices, GL_DYNAMIC_DRAW);
-  syVertexAttribute(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), NULL);
-
-  float *colors = (float *)malloc(numVertices * 4 * sizeof(float));
-  for (size_t i = 0; i < numVertices; i++)
-  {
-    memcpy(&colors[i * 4], SY_CURRENT_RENDER_COLOR, sizeof(float) * 4);
-  }
-  syWriteBuffer(GL_ARRAY_BUFFER, SY_MAIN_CBO, numVertices * 4 * sizeof(float),
-                colors, GL_DYNAMIC_DRAW);
-  syVertexAttribute(1, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), NULL);
-  free((void *)colors);
-  sySetDefaultShaderUniforms(SY_CURRENT_SHADER_PROGRAM);
-  glDrawArrays(GL_LINE_STRIP, 0, l->size / 3);
-}
-
 static inline void syPolyline_Print(syPolyline *l)
 {
   printf("Num vertices: %zu\n", l->size / 3);
@@ -454,53 +711,8 @@ static inline void syPolyline_Destroy(syPolyline *l)
   l->vertices = NULL;
 }
 
-//
-// SHADERS
-//
-
-// The default projection matrix passed to the default shader program.
-// Automatically changes when the GLFW callback `onFrameBufferSize` is called.
-// By default an orthographic projection matrix with near set to `0.1` and far
-// to `100.0`.
-static mat4s SY_DEFAULT_PROJECTION_MATRIX;
-
-// The default view matrix passed to the default shader program. By default a
-// translation of (0,0,-1).
-static mat4s SY_DEFAULT_VIEW_MATRIX;
-
-// The default model matrix. By default an identity matrix.
-static mat4s SY_DEFAULT_MODEL_MATRIX;
-
-// The default vertex shader used by the default shader program.
-static const char *SY_DEFAULT_VERTEX_SHADER =
-    "#version 430 core\n"
-    "layout (location = 0) in vec3 aPos;\n"
-    "layout (location = 1) in vec4 aColor;\n"
-    "uniform mat4 projection;\n"
-    "uniform mat4 model;\n"
-    "uniform mat4 view;\n"
-    "out vec4 vColor;\n"
-    "out vec4 vPos; \n"
-    "void main()\n"
-    "{\n"
-    " vec4 outPos = projection * view * model * vec4(aPos, 1.0);"
-    "   gl_Position = outPos;\n"
-    "   vPos = outPos;\n"
-    "   vColor = aColor;\n"
-    "}\0";
-
-// The default fragment shader used by the default shader program.
-static const char *SY_DEFAULT_FRAGMENT_SHADER =
-    "#version 430 core\n"
-    "in vec4 vColor;\n"
-    "layout (location = 0) out vec4 FragColor;\n"
-    "void main()\n"
-    "{\n"
-    "   FragColor = vColor;\n"
-    "}\n\0";
-
 // @returns `true` if `shader` has compiled susyessfully. Otherwise `false`.
-static bool syShaderCompileSusyess(const GLuint shader)
+static inline bool syShaderCompileSuccess(const GLuint shader)
 {
   int susyess;
   glGetShaderiv(shader, GL_COMPILE_STATUS, &susyess);
@@ -508,7 +720,7 @@ static bool syShaderCompileSusyess(const GLuint shader)
 }
 
 // @returns the info log to `shader` as a `const char *` owned by the caller.
-static const char *syGetShaderInfoLog(const GLuint shader)
+static inline const char *syGetShaderInfoLog(const GLuint shader)
 {
   char *buffer = (char *)malloc(512);
   glGetShaderInfoLog(shader, 512, NULL, buffer);
@@ -517,13 +729,13 @@ static const char *syGetShaderInfoLog(const GLuint shader)
 
 // @returns a `GLuint` representing the shader compiled, given the
 // `shaderSource` string and the `shaderType`. This operation may fail.
-static GLuint syLoadShaderFromSource(const char *shaderSource,
-                                     GLenum shaderType)
+static inline GLuint syLoadShaderFromSource(const char *shaderSource,
+                                            GLenum shaderType)
 {
   GLuint shader = glCreateShader(shaderType);
   glShaderSource(shader, 1, &shaderSource, NULL);
   glCompileShader(shader);
-  if (!syShaderCompileSusyess(shader))
+  if (!syShaderCompileSuccess(shader))
   {
     perror(syGetShaderInfoLog(shader));
   }
@@ -601,74 +813,28 @@ static inline void sySetUniformTexture(GLuint shader, const char *name,
   glBindTexture(GL_TEXTURE_2D, texture);
 }
 
-// Provides the default shader uniforms. For the vertex shader, the default
-// `model`, `view` and `projection` matrices are provided and are called so
-// respectively.
-static inline void sySetDefaultShaderUniforms(GLuint shader)
-{
-  sySetUniformMat4fv(shader, "model", false,
-                     (float *)&SY_DEFAULT_MODEL_MATRIX.raw);
-  sySetUniformMat4fv(shader, "view", false,
-                     (float *)&SY_DEFAULT_VIEW_MATRIX.raw);
-  sySetUniformMat4fv(shader, "projection", false,
-                     (float *)&SY_DEFAULT_PROJECTION_MATRIX.raw);
-}
-
-// Changes the current shader program to the one provided and provides it with
-// the default shader uniforms.
-// @sa `sySetDefaultShaderUniforms`
-static inline void syUseShader(GLuint shader)
-{
-  SY_CURRENT_SHADER_PROGRAM = shader;
-  glUseProgram(shader);
-  sySetDefaultShaderUniforms(shader);
-}
-
-// Changes the current shader program to the default shader program and provides
-// it with the default shader uniforms.
-// @sa `sySetDefaultShaderUniforms`
-static inline void syResetShader()
-{
-  SY_CURRENT_SHADER_PROGRAM = SY_DEFAULT_SHADER_PROGRAM;
-  glUseProgram(SY_DEFAULT_SHADER_PROGRAM);
-  sySetDefaultShaderUniforms(SY_DEFAULT_SHADER_PROGRAM);
-}
-
-static inline void syTranslate(float x, float y, float z)
-{
-  SY_DEFAULT_MODEL_MATRIX =
-      glms_translated(SY_DEFAULT_MODEL_MATRIX, (vec3s){{x, y, z}});
-}
-
-void syClearTransforms()
-{
-  SY_DEFAULT_MODEL_MATRIX = glms_mat4_identity();
-}
-
-void configure(syApp *app);
-void setup(syApp *app);
-void loop(syApp *app);
-
+////////////////////////////////////////////////////////////
 //
 // GLFW CALLBACKS
 //
 
-static void syOnError(int error_code, const char *description)
+static inline void syOnError(int error_code, const char *description)
 {
   (void)error_code;
   perror(description);
 }
 
-static void syOnFrameBufferSize(GLFWwindow *window, int width, int height)
+static inline void syOnFrameBufferSize(GLFWwindow *window, int width,
+                                       int height)
 {
   (void)window;
   glViewport(0, 0, width, height);
-  SY_DEFAULT_PROJECTION_MATRIX =
-      glms_ortho(0, (float)width, 0, (float)height, 0.1f, 100.0);
+  /* SY_DEFAULT_PROJECTION_MATRIX = */
+  /*     glms_ortho(0, (float)width, 0, (float)height, 0.1f, 100.0); */
 }
 
-static void syOnKey(GLFWwindow *window, int key, int scancode, int action,
-                    int mods)
+static inline void syOnKey(GLFWwindow *window, int key, int scancode,
+                           int action, int mods)
 {
   (void)scancode;
   (void)mods;
@@ -678,48 +844,10 @@ static void syOnKey(GLFWwindow *window, int key, int scancode, int action,
   }
 }
 
-typedef struct syApp
-{
-  // Window width. Default: 1280
-  int width;
-
-  // Window height. Default: 720
-  int height;
-
-  // Pointer to app's window
-  GLFWwindow *window;
-
-  // Window title. Default: empty string
-  const char *title;
-
-  // Major OpenGL version number. Default: 4
-  int glVersionMajor;
-
-  // Major OpenGL version number. Default: 3
-  int glVersionMinor;
-
-  // Number of samples used for multisampling. Default: 8
-  int samples;
-
-  // Current frame number.
-  u64 frameNum;
-
-  // Current frame rate.
-  float fps;
-
-  // Time in seconds since initialization.
-  double time;
-} syApp;
-
-static inline void syAppPreconfigure(syApp *app)
-{
-  app->width = SY_DEFAULT_WINDOW_WIDTH;
-  app->height = SY_DEFAULT_WINDOW_HEIGHT;
-  app->samples = SY_DEFAULT_WINDOW_SAMPLES;
-  app->title = "";
-  app->glVersionMajor = SY_DEFAULT_GL_VERSION_MAJOR;
-  app->glVersionMinor = SY_DEFAULT_GL_VERSION_MINOR;
-}
+////////////////////////////////////////////////////////////
+//
+// LIFECYLE HOOKS
+//
 
 static inline bool syMainInit()
 {
@@ -764,12 +892,13 @@ int main()
   }
 
   syApp app = {0};
-  syAppPreconfigure(&app);
+  syAppPreConfigure(&app);
   configure(&app);
   if (!syMainPostConfigure(&app))
   {
     return success;
   };
+  syRendererInit(&app.renderer, app.width, app.height);
   glPixelStorei(GL_PACK_ALIGNMENT, 2);
   setup(&app);
 

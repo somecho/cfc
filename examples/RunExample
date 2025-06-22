@@ -8,6 +8,7 @@ optimizations=$2
 
 gcc  "$binary.c" \
     $optimizations \
+    -g \
     -std=c23 \
     -lm -lglfw -lepoxy -lpng \
     -Wall -Wpedantic -Wextra \
