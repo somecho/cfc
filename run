@@ -1,7 +1,0 @@
-#!/usr/bin/bash
-
-gcc -O3 "$1.c" \
-    -std=c23 \
-    -lm -lglfw -lepoxy \
-    -Wall -Wpedantic -Wextra \
-    -o $1 && "./$1"

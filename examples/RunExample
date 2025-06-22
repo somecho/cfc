@@ -1,0 +1,16 @@
+#!/usr/bin/bash
+
+mkdir -p ../bin/examples
+
+binary=$(basename $(ls *$1*) .c)
+
+optimizations=$2
+
+gcc  "$binary.c" \
+    $optimizations \
+    -std=c23 \
+    -lm -lglfw -lepoxy -lpng \
+    -Wall -Wpedantic -Wextra \
+    -o "../bin/examples/$binary"
+
+../bin/examples/$binary
