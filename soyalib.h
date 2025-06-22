@@ -638,27 +638,6 @@ static inline bool syMainInit();
 // available.
 static inline bool syMainPostConfigure(syApp *app);
 
-typedef struct syGeometry
-{
-  // XYZ
-  float *vertices;
-  // RGBA
-  float *colors;
-  uint32_t *indices;
-  uint32_t numVertices;
-  uint32_t numIndices;
-} syGeometry;
-
-static inline void syGeometry_Destroy(syGeometry *g)
-{
-  free(g->vertices);
-  free(g->colors);
-  free(g->indices);
-  g->vertices = NULL;
-  g->colors = NULL;
-  g->indices = NULL;
-}
-
 typedef struct syPolyline
 {
   float *vertices;

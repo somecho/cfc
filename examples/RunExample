@@ -4,10 +4,12 @@ mkdir -p ../bin/examples
 
 binary=$(basename $(ls *$1*) .c)
 
-optimizations=$2
+shift 1
+
+args="$@"
 
 gcc  "$binary.c" \
-    $optimizations \
+    $args \
     -g \
     -std=c23 \
     -lm -lglfw -lepoxy -lpng \
