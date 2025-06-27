@@ -174,18 +174,20 @@ static inline void syVertexAttribute4f(GLuint index);
 
 ////////////////////////////////////////////////////////////
 //
-// DATA STRUCTURES
+// ARRAY
 //
 
-typedef struct syArrayF32 syArrayF32;
-typedef struct syArrayU32 syArrayU32;
+#define SY_DEFARRAY(name, type)                                                \
+  struct                                                                       \
+  {                                                                            \
+    usize len, cap;                                                            \
+    type *data;                                                                \
+  } name;
 
-#define syArrayInit(arr)                                                       \
+#define syArrayInit(arr, type)                                                 \
   (arr).len = 0;                                                               \
   (arr).cap = 4;                                                               \
-  (arr).data = _Generic((arr.data),                                            \
-      float *: (float *)calloc((arr).cap, sizeof(float)),                      \
-      u32 *: (u32 *)calloc((arr).cap, sizeof(u32)));
+  (arr).data = (type *)calloc((arr).cap, sizeof(float))
 
 #define syArrayPrint(arr)                                                      \
   printf("Length: %zu\n", arr.len);                                            \
@@ -236,8 +238,9 @@ typedef struct syArrayU32 syArrayU32;
 
 typedef struct syFbo syFbo;
 
-static inline bool syFboAllocate(syFbo *fbo, i32 width, i32 height,
-                                 GLenum format);
+typedef struct syFboOptions syFboOptions;
+
+static inline syFbo syFboCreate(syFboOptions *options);
 
 static inline void syFboBegin(syFbo *fbo);
 
@@ -264,6 +267,7 @@ static inline int syWritePngRGB(const char *filename, void *data, int width,
 
 static inline i32 syRandi();
 
+// @returns 0-1
 static inline f32 syRandf();
 
 ////////////////////////////////////////////////////////////
@@ -274,6 +278,20 @@ static inline f32 syRandf();
 extern void configure(syApp *app);
 extern void setup(syApp *app);
 extern void loop(syApp *app);
+
+#ifdef SY_NO_SETUP
+void setup(syApp *app)
+{
+  (void)app;
+}
+#endif
+
+#ifdef SY_NO_CONFIGURE
+void configure(syApp *app)
+{
+  (void)app;
+}
+#endif
 
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
@@ -354,6 +372,8 @@ typedef struct syApp
   syRenderer renderer;
 
   void (*onKeyPressed)(int key);
+
+  void (*onMousePressed)(syApp *app, int button, double x, double y);
 } syApp;
 
 static inline void syAppPreConfigure(syApp *app)
@@ -573,13 +593,13 @@ static const char *SY_DEFAULT_FRAGMENT_SHADER =
 
 static const char *SY_RGB_FBO_FRAGMENT_SHADER =
     "#version 430 core\n"
-    "out vec3 color;\n"
+    "out vec4 color;\n"
     "uniform sampler2D tex0;\n"
     "uniform vec2 res;"
     "void main()\n"
     "{\n"
     "  vec2 UV = gl_FragCoord.xy / res;"
-    "  color = texture(tex0, UV).xyz;"
+    "  color = vec4(texture(tex0, UV).xyz,1.0);"
     "}\n\0";
 
 static inline GLuint syShaderProgramLoadFromSource(
@@ -747,23 +767,6 @@ static inline void syVertexAttribute4f(GLuint index)
 
 ////////////////////////////////////////////////////////////
 //
-// DATA STRUCTURES
-//
-
-typedef struct syArrayF32
-{
-  f32 *data;
-  usize len, cap;
-} syArrayF32;
-
-typedef struct syArrayU32
-{
-  u32 *data;
-  usize len, cap;
-} syArrayU32;
-
-////////////////////////////////////////////////////////////
-//
 // syFbo
 //
 
@@ -775,51 +778,57 @@ typedef struct syFbo
   syShader shader;
 } syFbo;
 
-static inline bool syFboAllocate(syFbo *fbo, i32 width, i32 height,
-                                 GLenum format)
+typedef struct syFboOptions
 {
+  i32 width, height;
+  GLenum internalFormat, format, type;
+  GLint magFilter, minFilter;
+} syFboOptions;
+
+static inline syFbo syFboCreate(syFboOptions *options)
+{
+  syFbo fbo;
   // Generate framebuffer
-  glGenFramebuffers(1, &fbo->framebuffer);
-  glBindFramebuffer(GL_FRAMEBUFFER, fbo->framebuffer);
+  glGenFramebuffers(1, &fbo.framebuffer);
+  glBindFramebuffer(GL_FRAMEBUFFER, fbo.framebuffer);
 
   // Generate texture
-  glGenTextures(1, &fbo->texture);
+  glGenTextures(1, &fbo.texture);
 
   // Initialize and configure texture
-  glBindTexture(GL_TEXTURE_2D, fbo->texture);
-  glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format,
-               GL_UNSIGNED_BYTE, 0);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glBindTexture(GL_TEXTURE_2D, fbo.texture);
+
+  GLenum format =
+      options->format == 0 ? options->internalFormat : options->format;
+  glTexImage2D(GL_TEXTURE_2D, 0, options->internalFormat, options->width,
+               options->height, 0, format, options->type, 0);
+
+  GLint magFilter = options->magFilter == 0 ? GL_NEAREST : options->minFilter;
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter);
+
+  GLint minFilter = options->magFilter == 0 ? GL_NEAREST : options->minFilter;
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter);
 
   // Attach texture to Framebuffer's Color Attachment 0
-  glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fbo->texture, 0);
+  glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fbo.texture, 0);
 
   // Enable drawing to color attachment 0
   GLenum drawBuffers[1] = {GL_COLOR_ATTACHMENT0};
   glDrawBuffers(1, drawBuffers);
 
   // Set viewport of framebuffer
-  glViewport(0, 0, width, height);
+  glViewport(0, 0, options->width, options->height);
 
   // Bind default framebuffer and texture
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glBindTexture(GL_TEXTURE_2D, 0);
 
   // TODO: Handle other FBO texture formats
-  if (format == GL_RGB)
-  {
-    fbo->shader = syShaderProgramLoadFromSource(SY_RGB_FBO_FRAGMENT_SHADER,
-                                                SY_DEFAULT_VERTEX_SHADER);
-  }
-  else
-  {
-    fbo->shader = syShaderProgramLoadFromSource(SY_RGB_FBO_FRAGMENT_SHADER,
-                                                SY_DEFAULT_VERTEX_SHADER);
-  }
+  fbo.shader = syShaderProgramLoadFromSource(SY_RGB_FBO_FRAGMENT_SHADER,
+                                             SY_DEFAULT_VERTEX_SHADER);
 
-  // Return success
-  return glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
+  assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+  return fbo;
 }
 
 static inline void syFboBegin(syFbo *fbo)
@@ -968,7 +977,6 @@ static inline int syWritePngRGB(const char *filename, void *data, int width,
 
 static inline i32 syRandi()
 {
-  srand(time(NULL));
   return rand();
 }
 
@@ -1026,6 +1034,21 @@ static inline void syOnKey(GLFWwindow *window, int key, int scancode,
     if (key == GLFW_KEY_ESCAPE)
     {
       glfwSetWindowShouldClose(window, 1);
+    }
+  }
+}
+
+static inline void syOnMouseButton(GLFWwindow *window, int button, int action,
+                                   int mods)
+{
+  if (action == GLFW_PRESS)
+  {
+    syApp *app = (syApp *)glfwGetWindowUserPointer(window);
+    if (app->onMousePressed != NULL)
+    {
+      double x, y;
+      glfwGetCursorPos(window, &x, &y);
+      app->onMousePressed(app, button, x, app->height - y);
     }
   }
 }
@@ -1095,6 +1118,7 @@ int main()
   glfwSetWindowUserPointer(app.window, (void *)&app);
   glfwSetFramebufferSizeCallback(app.window, syOnFrameBufferSize);
   glfwSetKeyCallback(app.window, syOnKey);
+  glfwSetMouseButtonCallback(app.window, syOnMouseButton);
 
   double prevTime = glfwGetTime();
   while (!glfwWindowShouldClose(app.window))

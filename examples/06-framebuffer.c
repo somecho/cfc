@@ -5,18 +5,21 @@
 // to use the `syFbo` struct.
 //
 
+#define SY_NO_CONFIGURE
 #include "../soyalib.h"
 
 syFbo fbo;
 
-void configure(syApp *app)
-{
-}
-
 void setup(syApp *app)
 {
   // This function is called to initialize and allocate resources for the FBO.
-  syFboAllocate(&fbo, app->width, app->height, GL_RGB);
+  syFboOptions opts = {0};
+  opts.width = app->width;
+  opts.height = app->height;
+  opts.internalFormat = GL_RGB;
+  opts.type = GL_UNSIGNED_INT;
+
+  fbo = syFboCreate(&opts);
 }
 
 void loop(syApp *app)
@@ -27,16 +30,14 @@ void loop(syApp *app)
   sySetColor(app, SY_MAGENTA);
 
   i32 numPts = 80;
-  syArrayF32 pts;
-  syArrayF32Init(&pts);
+  SY_DEFARRAY(pts, f32);
+  syArrayInit(pts, f32);
   for (i32 i = 0; i < numPts; i++)
   {
     float x = (i / (float)numPts) * app->width;
     float y =
         (app->height * 0.5) + sinf((float)i * 0.5 + app->time * 3.0) * 200;
-    syArrayPush(pts, x);
-    syArrayPush(pts, y);
-    syArrayPush(pts, 0);
+    syArrayPush3(pts, x, y, 0);
   }
   syDrawLines(app, pts.data, pts.len / 3);
   syArrayDestroy(pts);
