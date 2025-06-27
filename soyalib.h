@@ -259,6 +259,15 @@ static inline int syWritePngRGB(const char *filename, void *data, int width,
 
 ////////////////////////////////////////////////////////////
 //
+// Random
+//
+
+static inline i32 syRandi();
+
+static inline f32 syRandf();
+
+////////////////////////////////////////////////////////////
+//
 // USER IMPLEMENTED
 //
 
@@ -343,6 +352,8 @@ typedef struct syApp
   double time;
 
   syRenderer renderer;
+
+  void (*onKeyPressed)(int key);
 } syApp;
 
 static inline void syAppPreConfigure(syApp *app)
@@ -653,10 +664,10 @@ static inline void syShaderUniformMat4fv(GLuint shader, const char *uniformName,
 static inline void syShaderUniformTexture(GLuint shader, const char *name,
                                           GLuint texture)
 {
-  GLuint uTex = glGetUniformLocation(shader, name);
-  glUniform1i(uTex, texture);
   glActiveTexture(GL_TEXTURE0 + texture);
   glBindTexture(GL_TEXTURE_2D, texture);
+  GLuint uTex = glGetUniformLocation(shader, name);
+  glUniform1i(uTex, texture);
 }
 
 // @returns `true` if `shader` has compiled susyessfully. Otherwise `false`.
@@ -952,6 +963,22 @@ static inline int syWritePngRGB(const char *filename, void *data, int width,
 
 ////////////////////////////////////////////////////////////
 //
+// Random
+//
+
+static inline i32 syRandi()
+{
+  srand(time(NULL));
+  return rand();
+}
+
+static inline f32 syRandf()
+{
+  return (float)syRandi() / (float)RAND_MAX;
+}
+
+////////////////////////////////////////////////////////////
+//
 // LIFECYLE HOOKS
 //
 
@@ -966,7 +993,7 @@ static inline bool syMainPostConfigure(syApp *app);
 
 ////////////////////////////////////////////////////////////
 //
-// GLFW CALLBACKS
+// CALLBACKS
 //
 
 static inline void syOnError(int error_code, const char *description)
@@ -989,9 +1016,17 @@ static inline void syOnKey(GLFWwindow *window, int key, int scancode,
 {
   (void)scancode;
   (void)mods;
-  if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+  if (action == GLFW_PRESS)
   {
-    glfwSetWindowShouldClose(window, 1);
+    syApp *app = (syApp *)glfwGetWindowUserPointer(window);
+    if (app->onKeyPressed != NULL)
+    {
+      app->onKeyPressed(key);
+    }
+    if (key == GLFW_KEY_ESCAPE)
+    {
+      glfwSetWindowShouldClose(window, 1);
+    }
   }
 }
 
@@ -1020,6 +1055,7 @@ static inline bool syMainPostConfigure(syApp *app)
 
   puts("Creating window");
   app->window =
+
       glfwCreateWindow(app->width, app->height, app->title, NULL, NULL);
 
   if (!app->window)
@@ -1056,6 +1092,7 @@ int main()
   //
   // Callbacks
   //
+  glfwSetWindowUserPointer(app.window, (void *)&app);
   glfwSetFramebufferSizeCallback(app.window, syOnFrameBufferSize);
   glfwSetKeyCallback(app.window, syOnKey);
 
