@@ -6,9 +6,11 @@
 
 #include "../extras/lockfreequeue.h"
 
-#include <stdio.h>
 #include <assert.h>
 #include <pthread.h>
+#include <stdio.h>
+#include <threads.h>
+#include <unistd.h>
 
 bool consuming = false;
 
@@ -37,12 +39,13 @@ int main()
   pthread_t t;
   pthread_create(&t, NULL, consumer, &q);
 
-  for (int i = 0; i < 1000; i++)
+  for (int i = 0; i < 10; i++)
   {
     float *f = calloc(1, sizeof(float));
     *f = (float)i;
     printf("PRODUCING: %f\n", *f);
     syLFQProduce(&q, f);
+    sleep(1);
   }
 
   consuming = false;
