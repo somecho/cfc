@@ -4,17 +4,21 @@
 #include <assert.h>
 #include <pthread.h>
 
-LFQ q = {0};
+LFQ q;
 
 bool consuming = false;
 
-void *consumer()
+void *consumer(void *arg)
 {
-  while (consuming || q.count > 0)
+  LFQ *q = arg;
+  while (consuming || atomic_load(&q->count) > 0)
   {
-    float *f = LFQ_Consume(&q);
-    printf("CONSUMED: %f\n", *f);
-    free(f);
+    float *f = LFQ_Consume(q);
+    if (f)
+    {
+      printf("CONSUMED: %f\n", *f);
+      free(f);
+    }
   }
   return NULL;
 }
@@ -24,8 +28,9 @@ int main()
   LFQ_Init(&q);
 
   consuming = true;
+
   pthread_t t;
-  pthread_create(&t, NULL, consumer, NULL);
+  pthread_create(&t, NULL, consumer, &q);
 
   for (int i = 0; i < 100; i++)
   {

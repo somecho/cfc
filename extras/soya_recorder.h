@@ -6,96 +6,127 @@
 #define SOYA_RECORDER_H_
 
 typedef struct Node Node;
-
 typedef struct Node
 {
   void *data;
-  Node *head;
-  Node *tail;
+  _Atomic(Node *) next;
 } Node;
 
 // Lock Free Queue
 typedef struct LFQ
 {
-  Node *head;
-  Node *tail;
+  _Atomic(Node *) head;
+  _Atomic(Node *) tail;
   atomic_int count;
 } LFQ;
 
 void LFQ_Init(LFQ *q)
 {
-  q->head = NULL;
-  q->tail = NULL;
-  q->count = 0;
-}
+  // Create a dummy node to simplify the algorithm
+  Node *dummy = (Node *)calloc(1, sizeof(Node));
+  dummy->data = NULL;
+  atomic_store(&dummy->next, NULL);
 
-bool LFQ_IsEmpty(LFQ *q)
-{
-  return q->head == NULL && q->tail == NULL;
+  atomic_store(&q->head, dummy);
+  atomic_store(&q->tail, dummy);
+  atomic_store(&q->count, 0);
 }
 
 void LFQ_Produce(LFQ *q, void *data)
 {
-  Node *n = (Node *)calloc(1, sizeof(Node));
-  n->data = data;
-  bool isLFQEmpty = q->head == NULL;
-  if (isLFQEmpty)
+  // Allocate new node
+  Node *node = (Node *)calloc(1, sizeof(Node));
+  node->data = data;
+  atomic_store(&node->next, NULL);
+
+  while (true)
   {
-    n->head = NULL;
-    n->tail = NULL;
-    q->head = n;
-    q->count++;
-    return;
-  }
-  bool LFQHasOne = q->head != NULL && q->tail == NULL;
-  if (LFQHasOne)
-  {
-    n->head = q->head;
-    n->tail = NULL;
-    q->head->tail = n;
-    q->tail = n;
-    q->count++;
-    return;
+    Node *tail = atomic_load_explicit(&q->tail, memory_order_acquire);
+    Node *next = atomic_load_explicit(&tail->next, memory_order_acquire);
+
+    // Check if tail is still the same (avoid ABA problem)
+    if (tail == atomic_load_explicit(&q->tail, memory_order_acquire))
+    {
+      if (next == NULL)
+      {
+        // Try to link node at the end of the list
+        if (atomic_compare_exchange_weak_explicit(&tail->next, &next, node,
+                                                  memory_order_release,
+                                                  memory_order_relaxed))
+        {
+          // Successfully linked node, now try to swing tail to new node
+          atomic_compare_exchange_weak_explicit(&q->tail, &tail, node,
+                                                memory_order_release,
+                                                memory_order_relaxed);
+          break;
+        }
+      }
+      else
+      {
+        // Tail is lagging behind, try to advance it
+        atomic_compare_exchange_weak_explicit(
+            &q->tail, &tail, next, memory_order_release, memory_order_relaxed);
+      }
+    }
   }
 
-  n->head = q->tail;
-  n->tail = NULL;
-  q->tail->tail = n;
-  q->tail = n;
-  q->count++;
+  atomic_fetch_add_explicit(&q->count, 1, memory_order_relaxed);
 }
 
 void *LFQ_Consume(LFQ *q)
 {
-  if (LFQ_IsEmpty(q))
-  {
-    return NULL;
-  }
-  if (q->head != NULL)
-  {
-    Node *n = q->head;
-    void *data = n->data;
-    Node *second = q->head->tail;
-    if (second != NULL)
-    {
-      if (second == q->tail)
-      {
-        q->tail = NULL;
-      }
-      second->head = NULL;
-      q->head = second;
-    }
-    else
-    {
-      q->head = NULL;
-    }
+  void *data = NULL;
+  Node *old_head = NULL;
 
-    free(n);
-    n = NULL;
-    q->count--;
-    return data;
+  while (true)
+  {
+    Node *head = atomic_load_explicit(&q->head, memory_order_acquire);
+    Node *tail = atomic_load_explicit(&q->tail, memory_order_acquire);
+    Node *next = atomic_load_explicit(&head->next, memory_order_acquire);
+
+    // Check if head is still the same (avoid ABA problem)
+    if (head == atomic_load_explicit(&q->head, memory_order_acquire))
+    {
+      if (head == tail)
+      {
+        if (next == NULL)
+        {
+          // Queue is empty
+          return NULL;
+        }
+
+        // Tail is lagging behind, try to advance it
+        atomic_compare_exchange_weak_explicit(
+            &q->tail, &tail, next, memory_order_release, memory_order_relaxed);
+      }
+      else
+      {
+        if (next == NULL)
+        {
+          // This shouldn't happen in a well-formed queue
+          continue;
+        }
+
+        // Read data before CAS, as another thread may free the node
+        data = next->data;
+
+        // Try to swing head to next node
+        if (atomic_compare_exchange_weak_explicit(&q->head, &head, next,
+                                                  memory_order_release,
+                                                  memory_order_relaxed))
+        {
+          old_head = head; // Save the old head to free it
+          break;
+        }
+      }
+    }
   }
-  return NULL;
+
+  // Free the old dummy node
+  free(old_head);
+  atomic_fetch_sub_explicit(&q->count, 1, memory_order_relaxed);
+
+  return data;
 }
 
 #endif // SOYA_RECORDER_H_
