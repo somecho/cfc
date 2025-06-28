@@ -2,47 +2,50 @@
 #include <stdbool.h>
 #include <stdatomic.h>
 
-#ifndef SOYA_RECORDER_H_
-#define SOYA_RECORDER_H_
+#ifndef SOYA_LFQ_H_
+#define SOYA_LFQ_H_
 
-typedef struct Node Node;
-typedef struct Node
+typedef struct _Node _Node;
+typedef struct syLFQ syLFQ;
+
+static void syLFQInit(syLFQ *q);
+static void syLFQProduce(syLFQ *q, void *data);
+static void *syLFQConsume(syLFQ *q);
+
+typedef struct _Node
 {
   void *data;
-  _Atomic(Node *) next;
-} Node;
+  _Atomic(_Node *) next;
+} _Node;
 
-// Lock Free Queue
-typedef struct LFQ
+typedef struct syLFQ
 {
-  _Atomic(Node *) head;
-  _Atomic(Node *) tail;
+  _Atomic(_Node *) head;
+  _Atomic(_Node *) tail;
   atomic_int count;
-} LFQ;
+} syLFQ;
 
-void LFQ_Init(LFQ *q)
+static void syLFQInit(syLFQ *q)
 {
-  // Create a dummy node to simplify the algorithm
-  Node *dummy = (Node *)calloc(1, sizeof(Node));
+  _Node *dummy = (_Node *)calloc(1, sizeof(_Node));
   dummy->data = NULL;
   atomic_store(&dummy->next, NULL);
-
   atomic_store(&q->head, dummy);
   atomic_store(&q->tail, dummy);
   atomic_store(&q->count, 0);
 }
 
-void LFQ_Produce(LFQ *q, void *data)
+static void syLFQProduce(syLFQ *q, void *data)
 {
   // Allocate new node
-  Node *node = (Node *)calloc(1, sizeof(Node));
+  _Node *node = (_Node *)calloc(1, sizeof(_Node));
   node->data = data;
   atomic_store(&node->next, NULL);
 
   while (true)
   {
-    Node *tail = atomic_load_explicit(&q->tail, memory_order_acquire);
-    Node *next = atomic_load_explicit(&tail->next, memory_order_acquire);
+    _Node *tail = atomic_load_explicit(&q->tail, memory_order_acquire);
+    _Node *next = atomic_load_explicit(&tail->next, memory_order_acquire);
 
     // Check if tail is still the same (avoid ABA problem)
     if (tail == atomic_load_explicit(&q->tail, memory_order_acquire))
@@ -73,16 +76,16 @@ void LFQ_Produce(LFQ *q, void *data)
   atomic_fetch_add_explicit(&q->count, 1, memory_order_relaxed);
 }
 
-void *LFQ_Consume(LFQ *q)
+static void *syLFQConsume(syLFQ *q)
 {
   void *data = NULL;
-  Node *old_head = NULL;
+  _Node *old_head = NULL;
 
   while (true)
   {
-    Node *head = atomic_load_explicit(&q->head, memory_order_acquire);
-    Node *tail = atomic_load_explicit(&q->tail, memory_order_acquire);
-    Node *next = atomic_load_explicit(&head->next, memory_order_acquire);
+    _Node *head = atomic_load_explicit(&q->head, memory_order_acquire);
+    _Node *tail = atomic_load_explicit(&q->tail, memory_order_acquire);
+    _Node *next = atomic_load_explicit(&head->next, memory_order_acquire);
 
     // Check if head is still the same (avoid ABA problem)
     if (head == atomic_load_explicit(&q->head, memory_order_acquire))
@@ -129,4 +132,4 @@ void *LFQ_Consume(LFQ *q)
   return data;
 }
 
-#endif // SOYA_RECORDER_H_
+#endif // SOYA_LFQ_H_

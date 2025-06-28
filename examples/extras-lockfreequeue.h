@@ -1,19 +1,23 @@
-#include "../extras/soya_recorder.h"
+//
+// Example: extras-lockfreequeue.c
+// Description:
+// Example usage of the threadsafe lock-free queue syLFQ.
+//
+
+#include "../extras/lockfreequeue.h"
 
 #include <stdio.h>
 #include <assert.h>
 #include <pthread.h>
 
-LFQ q;
-
 bool consuming = false;
 
 void *consumer(void *arg)
 {
-  LFQ *q = arg;
+  syLFQ *q = arg;
   while (consuming || atomic_load(&q->count) > 0)
   {
-    float *f = LFQ_Consume(q);
+    float *f = syLFQConsume(q);
     if (f)
     {
       printf("CONSUMED: %f\n", *f);
@@ -25,19 +29,20 @@ void *consumer(void *arg)
 
 int main()
 {
-  LFQ_Init(&q);
+  syLFQ q;
+  syLFQInit(&q);
 
   consuming = true;
 
   pthread_t t;
   pthread_create(&t, NULL, consumer, &q);
 
-  for (int i = 0; i < 100; i++)
+  for (int i = 0; i < 1000; i++)
   {
     float *f = calloc(1, sizeof(float));
     *f = (float)i;
     printf("PRODUCING: %f\n", *f);
-    LFQ_Produce(&q, f);
+    syLFQProduce(&q, f);
   }
 
   consuming = false;
