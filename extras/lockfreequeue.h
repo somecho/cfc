@@ -5,12 +5,25 @@
 #ifndef SOYA_LFQ_H_
 #define SOYA_LFQ_H_
 
+// Internal structure for singly linked-list.
 typedef struct _Node _Node;
+
+// Lock-Free Queue for generic data implemented with as a singly linked-list.
 typedef struct syLFQ syLFQ;
 
+// Initialized the LFQ. This function is threadsafe.
 static void syLFQInit(syLFQ *q);
+
+// Creates an element to hold `data` and inserts it into the LFQ. Threadsafe.
 static void syLFQProduce(syLFQ *q, void *data);
+
+// Consumes a node and removes it from the LFQ.
+// @returns the data the node is pointing to.
 static void *syLFQConsume(syLFQ *q);
+
+// Consumes all remaining elements in the LFQ, frees them and the data they
+// point to.
+static void syLFQDestroy(syLFQ *q);
 
 typedef struct _Node
 {
@@ -47,17 +60,14 @@ static void syLFQProduce(syLFQ *q, void *data)
     _Node *tail = atomic_load_explicit(&q->tail, memory_order_acquire);
     _Node *next = atomic_load_explicit(&tail->next, memory_order_acquire);
 
-    // Check if tail is still the same (avoid ABA problem)
     if (tail == atomic_load_explicit(&q->tail, memory_order_acquire))
     {
       if (next == NULL)
       {
-        // Try to link node at the end of the list
         if (atomic_compare_exchange_weak_explicit(&tail->next, &next, node,
                                                   memory_order_release,
                                                   memory_order_relaxed))
         {
-          // Successfully linked node, now try to swing tail to new node
           atomic_compare_exchange_weak_explicit(&q->tail, &tail, node,
                                                 memory_order_release,
                                                 memory_order_relaxed);
@@ -66,7 +76,6 @@ static void syLFQProduce(syLFQ *q, void *data)
       }
       else
       {
-        // Tail is lagging behind, try to advance it
         atomic_compare_exchange_weak_explicit(
             &q->tail, &tail, next, memory_order_release, memory_order_relaxed);
       }
@@ -87,18 +96,15 @@ static void *syLFQConsume(syLFQ *q)
     _Node *tail = atomic_load_explicit(&q->tail, memory_order_acquire);
     _Node *next = atomic_load_explicit(&head->next, memory_order_acquire);
 
-    // Check if head is still the same (avoid ABA problem)
     if (head == atomic_load_explicit(&q->head, memory_order_acquire))
     {
       if (head == tail)
       {
         if (next == NULL)
         {
-          // Queue is empty
           return NULL;
         }
 
-        // Tail is lagging behind, try to advance it
         atomic_compare_exchange_weak_explicit(
             &q->tail, &tail, next, memory_order_release, memory_order_relaxed);
       }
@@ -106,30 +112,41 @@ static void *syLFQConsume(syLFQ *q)
       {
         if (next == NULL)
         {
-          // This shouldn't happen in a well-formed queue
           continue;
         }
 
-        // Read data before CAS, as another thread may free the node
         data = next->data;
 
-        // Try to swing head to next node
         if (atomic_compare_exchange_weak_explicit(&q->head, &head, next,
                                                   memory_order_release,
                                                   memory_order_relaxed))
         {
-          old_head = head; // Save the old head to free it
+          old_head = head;
           break;
         }
       }
     }
   }
 
-  // Free the old dummy node
   free(old_head);
   atomic_fetch_sub_explicit(&q->count, 1, memory_order_relaxed);
-
   return data;
+}
+
+void syLFQDestroy(syLFQ *q)
+{
+  void *data = syLFQConsume(q);
+  while (data != NULL)
+  {
+    free(data);
+    data = syLFQConsume(q);
+  }
+  _Node *head = atomic_load(&q->head);
+  if (head != NULL)
+  {
+    free(head);
+    head = NULL;
+  }
 }
 
 #endif // SOYA_LFQ_H_

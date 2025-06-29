@@ -1,8 +1,8 @@
 //
-//
+// Example: extras-pipeencoder.c
 //
 
-#include "../extras/pipeencoder.h"
+#include "../extras/pipeencoder.h" // MUST BE INCLUDED IN THE BEGINNING!
 
 #define SY_NO_CONFIGURE
 #include "../soyalib.h"
