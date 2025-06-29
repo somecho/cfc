@@ -1,4 +1,13 @@
-#define _POSIX_C_SOURCE 200112L
+#define _POSIX_C_SOURCE 200112L // This is needed for popen
+
+// TODO: multiplatform popen
+
+//
+// syPipeEncoder
+//
+// A multithread ffmpeg pipe encoder. Feed it frames in one thread, pipes the
+// frames to ffmpeg in another.
+//
 
 #include <pthread.h>
 #include <stdint.h>
@@ -9,6 +18,33 @@
 
 #ifndef SOYA_PIPEENCORDER_H_
 #define SOYA_PIPEENCORDER_H_
+
+// An ffmpeg multithreaded pipe encoder.
+typedef struct syPipeEncoder syPipeEncoder;
+
+typedef struct syPipeEncoderOptions syPipeEncoderOptions;
+
+// Initializes the pipe encoder.
+static inline void syPipeEncoderInit(syPipeEncoder *enc,
+                                     syPipeEncoderOptions *opts);
+
+// Starts the pipe encoder and opens a pipe to ffmpeg. If this succeeds,
+// `syPipeEncoderEncode` can be called and `syPipeEncoderProcessFrame` is
+// started in a separate thread.
+static inline bool syPipeEncoderStart(syPipeEncoder *enc);
+
+// Stops the pipe encoder, waits for the encoding thread to join and closes the
+// pipe.
+static inline bool syPipeEncoderStop(syPipeEncoder *enc);
+
+// Stores the pixel data in the internal queue.
+static inline bool syPipeEncoderEncode(syPipeEncoder *enc, void *data);
+
+// While pipe encoder has been started or there are still frames to be encoded,
+// this function takes frames from the internal queue and writes it to the
+// ffmpeg pipe for muxing. When the pipe encoder has been stopped, this function
+// runs until there are no more frames.
+static inline void *syPipeEncoderProcessFrame(void *args);
 
 typedef struct syPipeEncoderOptions
 {
@@ -35,7 +71,8 @@ typedef struct syPipeEncoder
   char *_cmd;
 } syPipeEncoder;
 
-void syPipeEncoderInit(syPipeEncoder *enc, syPipeEncoderOptions *opts)
+static inline void syPipeEncoderInit(syPipeEncoder *enc,
+                                     syPipeEncoderOptions *opts)
 {
   if (opts->outputPath == NULL)
   {
@@ -70,49 +107,31 @@ void syPipeEncoderInit(syPipeEncoder *enc, syPipeEncoderOptions *opts)
   syLFQInit(&enc->frames);
 }
 
-void *syPipeEncoderProcessFrame(void *args)
-{
-  syPipeEncoder *enc = (syPipeEncoder *)args;
-  while (atomic_load(&enc->isRecording) || atomic_load(&enc->frames.count) > 0)
-  {
-    void *data = syLFQConsume(&enc->frames);
-    if (data != NULL)
-    {
-      size_t len = enc->width * enc->height * enc->numChannels;
-      fwrite(data, sizeof(char), len, enc->pipe);
-      free(data);
-    }
-  }
-  return NULL;
-}
-
-void syPipeEncoderEncode(syPipeEncoder *enc, void *data)
-{
-  syLFQProduce(&enc->frames, data);
-}
-
-void syPipeEncoderStart(syPipeEncoder *enc)
+static inline bool syPipeEncoderStart(syPipeEncoder *enc)
 {
   if (atomic_load(&enc->isRecording))
   {
-    perror("syPipeEncoder: Already recording.");
-    return;
+    perror("syPipeEncoder: Already recording. Can't start.");
+    return false;
   }
-  else
+  if (atomic_load(&enc->frames.count) > 0)
   {
-    atomic_store(&enc->isRecording, true);
-    enc->pipe = popen(enc->_cmd, "w");
-    if (!enc->pipe)
-    {
-      perror("syPipEncoder: Unable to open pipe.\n");
-      return;
-    }
-    setvbuf(enc->pipe, NULL, _IONBF, 0);
-    pthread_create(&enc->piper, NULL, syPipeEncoderProcessFrame, enc);
+    perror("syPipeEncoder: There are still frames. Can't start.");
+    return false;
   }
+  atomic_store(&enc->isRecording, true);
+  enc->pipe = popen(enc->_cmd, "w");
+  if (!enc->pipe)
+  {
+    perror("syPipEncoder: Unable to open pipe.\n");
+    return false;
+  }
+  setvbuf(enc->pipe, NULL, _IONBF, 0);
+  pthread_create(&enc->piper, NULL, syPipeEncoderProcessFrame, enc);
+  return true;
 }
 
-void syPipeEncoderStop(syPipeEncoder *enc)
+static inline bool syPipeEncoderStop(syPipeEncoder *enc)
 {
   if (atomic_load(&enc->isRecording))
   {
@@ -126,8 +145,37 @@ void syPipeEncoderStop(syPipeEncoder *enc)
     {
       perror("syPipeEncoder: Error closing FFmpeg pipe.\n");
       enc->pipe = NULL;
+      return false;
     }
   }
+  return true;
+}
+
+static inline bool syPipeEncoderEncode(syPipeEncoder *enc, void *data)
+{
+  if (atomic_load(&enc->isRecording))
+  {
+    syLFQProduce(&enc->frames, data);
+    return true;
+  }
+  perror("syPipeEncoder: encoder isn't started.");
+  return false;
+}
+
+static inline void *syPipeEncoderProcessFrame(void *args)
+{
+  syPipeEncoder *enc = (syPipeEncoder *)args;
+  while (atomic_load(&enc->isRecording) || atomic_load(&enc->frames.count) > 0)
+  {
+    void *data = syLFQConsume(&enc->frames);
+    if (data != NULL)
+    {
+      size_t len = enc->width * enc->height * enc->numChannels;
+      fwrite(data, sizeof(char), len, enc->pipe);
+      free(data);
+    }
+  }
+  return NULL;
 }
 
 #endif // PIPERECORDER_H_

@@ -1,8 +1,14 @@
 //
 // Example: extras-pipeencoder.c
-//
+// Description:
+// Use the pipe encoder to record applpication for 5 seconds with ffmpeg.
 
-#include "../extras/pipeencoder.h" // MUST BE INCLUDED IN THE BEGINNING!
+//
+// This header must be included at the very top because it declares POSIX
+// functions, which need to be declared before any stdlib functions are
+// imported.
+//
+#include "../extras/pipeencoder.h"
 
 #define SY_NO_CONFIGURE
 #include "../soyalib.h"
@@ -11,7 +17,11 @@ syPipeEncoder encoder;
 
 void setup(syApp *app)
 {
-  syPipeEncoderOptions opts = {0};
+  syPipeEncoderOptions opts = {0}; // First initialize `opts` to 0.
+  //
+  // All options should be explicitly provided except for `extraInputArgs` and
+  // `extraOutputArgs`.
+  //
   opts.width = app->width;
   opts.height = app->height;
   opts.codec = "h264_nvenc";
@@ -35,7 +45,7 @@ void loop(syApp *app)
   {
     syPipeEncoderStart(&encoder);
   }
-  else if (app->frameNum >= 120 * 10)
+  else if (app->frameNum >= 120 * 5) // 5 seconds with 120 fps
   {
     syPipeEncoderStop(&encoder);
     glfwSetWindowShouldClose(app->window, true);
