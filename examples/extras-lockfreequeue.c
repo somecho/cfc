@@ -51,5 +51,6 @@ int main()
   consuming = false;
   pthread_join(t, NULL);
 
+  syLFQDestroy(&q);
   return 0;
 }
