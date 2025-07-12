@@ -102,6 +102,7 @@ static inline void syPipeEncoderInit(syPipeEncoder *enc,
   sprintf(enc->_cmd, "%s %s", enc->_cmd, opts->outputPath);
 
   enc->numChannels = (strcmp(opts->inputPixelFormat, "rgba") == 0) ? 4 : 3;
+  enc->numChannels = (strcmp(opts->inputPixelFormat, "rgb32") == 0) ? 4 : 3;
   enc->width = opts->width;
   enc->height = opts->height;
   syLFQInit(&enc->frames);
@@ -139,6 +140,7 @@ static inline bool syPipeEncoderStop(syPipeEncoder *enc)
     atomic_store(&enc->isRecording, false);
 
     pthread_join(enc->piper, NULL);
+    puts("syPipeEncoder: Thread joined. Closing pipe ...");
 
     int res = pclose(enc->pipe);
     if (res < 0)
@@ -147,6 +149,7 @@ static inline bool syPipeEncoderStop(syPipeEncoder *enc)
       enc->pipe = NULL;
       return false;
     }
+    puts("syPipeEncoder: Pipe closed.");
   }
   return true;
 }
