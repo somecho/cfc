@@ -1,0 +1,31 @@
+#!/usr/bin/env sh
+
+mkdir -p ./bin
+
+echo "\nCompiling"
+
+cfiles=$(ls *.c)
+for f in $cfiles
+do
+    echo "...$f"
+ gcc $f -g -std=c11 -Wall -Wpedantic \
+     -lm -lglfw -lepoxy -lpng \
+     -o "bin/$(basename $f .c)"
+done
+
+tests=$(ls ./bin)
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+echo "\nRunning Tests"
+for test in $tests
+do
+    echo "Test: $test"
+    ./bin/"$test"
+    if [ $? -eq 0 ];
+    then echo "......${GREEN}PASS${NC}";
+    else echo "......${RED}FAIL${NC}";
+    fi
+done

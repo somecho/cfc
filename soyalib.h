@@ -1095,6 +1095,7 @@ static inline bool syMainPostConfigure(syApp *app)
   return true;
 }
 
+#ifndef SOYA_NO_MAIN
 int main()
 {
   int success = -1;
@@ -1136,5 +1137,6 @@ int main()
   glfwTerminate();
   return 0;
 }
+#endif
 
 #endif // SOYA_LIB_H
