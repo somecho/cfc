@@ -5,11 +5,7 @@
 // it.
 //
 
-#ifdef USE_CMAKE_SOYA
 #include <soya/soyalib.h>
-#else
-#include "../soya/soyalib.h"
-#endif
 
 syShader shader;
 
@@ -21,7 +17,9 @@ void configure(syApp *app)
 void setup(syApp *app)
 {
   (void)app;
-  const char *fsSource = syReadFile("../resources/example05.frag");
+  char shaderPath[1024];
+  sprintf(shaderPath, "%s%s", RESOURCE_DIR, "/example05.frag");
+  const char *fsSource = syReadFile(shaderPath);
   shader = syShaderProgramLoadFromSource(fsSource, NULL);
   free((void *)fsSource);
 }

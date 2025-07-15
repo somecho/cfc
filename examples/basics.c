@@ -4,11 +4,7 @@
 // This example shows how to use Soya to create a window.
 //
 
-#ifdef USE_CMAKE_SOYA
 #include <soya/soyalib.h>
-#else
-#include "../soya/soyalib.h"
-#endif
 
 //
 // To begin using Soya, there are 3 functions you have to implement. All 3

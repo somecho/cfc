@@ -4,13 +4,7 @@
 // Simple particle system in a perlin noise flow field.
 //
 
-#ifdef USE_CMAKE_SOYA
 #include <soya/soyalib.h>
-#else
-#include "../soya/soyalib.h"
-#endif
-
-#include <time.h>
 
 #define NUM_PARTICLES 50000 // you may need -O3 to run at high fps
 

@@ -1,19 +1,18 @@
 #!/usr/bin/bash
 
-mkdir -p ../bin/examples
-
-binary=$(basename $(ls *$1*) .c)
+BIN_DIR="../bin/examples"
+SRC=$1
+BINARY="../bin/examples/$(basename $SRC .c)"
 
 shift 1
+ARGS="$@"
 
-args="$@"
+mkdir -p $BIN_DIR
 
-gcc "$binary.c" \
-    $args \
-    -g \
-    -std=c11 \
-    -lm -lglfw -lepoxy -lpng \
-    -Wall -Wpedantic -Wextra \
-    -o "../bin/examples/$binary"
+gcc $SRC "../soya/glad/glad.c" \
+    $ARGS \
+    -DRESOURCE_DIR=\"$(realpath ../resources)\" \
+    -I../ -std=c11 -lm -lglfw \
+    -o $BINARY
 
-../bin/examples/$binary
+$BINARY

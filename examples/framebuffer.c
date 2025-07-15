@@ -7,11 +7,7 @@
 
 #define SY_NO_CONFIGURE
 
-#ifdef USE_CMAKE_SOYA
 #include <soya/soyalib.h>
-#else
-#include "../soya/soyalib.h"
-#endif
 
 syFbo fbo;
 

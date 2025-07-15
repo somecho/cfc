@@ -11,17 +11,8 @@
 
 #define SY_NO_CONFIGURE
 
-#ifdef USE_CMAKE_SOYA
-
 #include <soya/extras/pipeencoder.h>
 #include <soya/soyalib.h>
-
-#else
-
-#include "../soya/extras/pipeencoder.h"
-#include "../soya/soyalib.h"
-
-#endif
 
 syPipeEncoder encoder;
 

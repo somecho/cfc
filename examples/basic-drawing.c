@@ -5,11 +5,7 @@
 // functions in Soya.
 //
 
-#ifdef USE_CMAKE_SOYA
 #include <soya/soyalib.h>
-#else
-#include "../soya/soyalib.h"
-#endif
 
 void configure(syApp *app)
 {
