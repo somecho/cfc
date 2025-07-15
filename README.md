@@ -1,34 +1,52 @@
-# Soya - A Lightweight Creative Coding Framework in C
+# Soya - Creative Coding with C 
 
-Soya is a OpenGL-based single-header library for creating 2D/3D graphics.
+> ⚠️ Under active development, API can change at any moment!
 
-## Using Soya
+Soya is a header-only library for creating 2D/3D graphics. 
 
-Soya depends on the following libraries:
+### Lightweight
+
+Soya only has 2 hard dependencies:
 - [GLFW][glfw] for window management
-- [Libepoxy][epoxy] for GL extension loading
 - [Cglm][cglm] for vector and matrix math
-- [libpng][libpng] for PNG import and export
 
-## Running Examples
-For now, if you would like to learn how to use Soya, have a look at the [examples][examples]. 
+With CMake, you won't need to install them.
 
-### On Linux
-```sh
-cd examples
-./RunExample basic-drawing
+### Easy API
+
+It's somewhere in between Processing and OpenFrameworks in terms of ease of use. 
+
+```c
+#include <soya/soyalib.h>
+
+void configure(syApp *app){
+  app->width = 1000;
+  app->height = 1000;
+}
+
+void setup(syApp *app){}
+
+void loop(syApp *app){
+  syClear(SY_WHITE);
+  sySetColor(app, SY_BLACK);
+
+  syTranslate(app, app->width * 0.25, app->height * 0.75, 0);
+  syRotate(app, app->time * 0.05, 0, 0, 1);
+  syDrawQuad(app, -100, -100, 200, 200);
+  syResetTransformations(app);
+
+  sySetColor(app, SY_MAGENTA);
+  syTranslate(app, app->width * 0.75, app->height * 0.75, 0);
+  syRotate(app, app->time * -0.15, 0, 0, 1);
+  syDrawPolygon(app, 0, 0, 0, 200, 7);
+  syResetTransformations(app);
+
+  sySetColor(app, SY_GREEN);
+  float linePts[] = {250, 250, 0,   250, 500, 0,   500, 500,
+                     0,   500, 250, 0,   250, 250, 0};
+  syDrawLines(app, linePts, 5);
+}
 ```
-#### Using the `RunExample` script
-The script has the following structure.
-```sh
-./RunExample EXAMPLE_NAME OPTIONAL_ARGS
-```
-- `EXAMPLE_NAME` - the name of the example in the examples folder follows the `NN-EXAMPLE_NAME.C` structure, where `NN` is the number. You only need to provide `EXAMPLE_NAME`.
-- `OPTIONAL_ARGS` - you can leave this out, but you can also add additional arguments like `-O3`.
-- The examples are built to a directory called `bin` in the root directory.
 
 [glfw]:https://github.com/glfw/glfw
-[epoxy]:https://github.com/anholt/libepoxy
 [cglm]:https://github.com/recp/cglm
-[libpng]:https://github.com/pnggroup/libpng
-[examples]:./examples
