@@ -14,7 +14,7 @@ With CMake, you won't need to install them.
 
 ### Easy API
 
-It's somewhere in between Processing and OpenFrameworks in terms of ease of use. 
+It's somewhere in between Processing and OpenFrameworks in terms of ease of use. Go to [getting started](https://github.com/somecho/soya/wiki/Getting-Started) for more details.
 
 ```c
 #include <soya/soyalib.h>
