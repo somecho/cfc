@@ -7,7 +7,12 @@
 //
 
 #define SY_NO_CONFIGURE
-#include "../soyalib.h"
+
+#ifdef USE_CMAKE_SOYA
+#include <soya/soyalib.h>
+#else
+#include "../soya/soyalib.h"
+#endif
 
 //
 // This macro declares an array struct. It takes a name and a type.

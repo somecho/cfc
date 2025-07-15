@@ -4,7 +4,11 @@
 // Example usage of the threadsafe lock-free queue syLFQ.
 //
 
-#include "../extras/lockfreequeue.h"
+#ifdef USE_CMAKE_SOYA
+#include <soya/extras/lockfreequeue.h>
+#else
+#include "../soya/extras/lockfreequeue.h"
+#endif
 
 #include <assert.h>
 #include <pthread.h>

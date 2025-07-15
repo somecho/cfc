@@ -1,15 +1,29 @@
 #define SOYA_NO_MAIN
 
-#include "../extras/preprocessor.h"
-#include "../soyalib.h"
+#ifdef USE_CMAKE_SOYA
+
+#include <soya/extras/preprocessor.h>
+#include <soya/soyalib.h>
+static const char *RESOURCE_DIR = SOYA_TEST_RESOURCES;
+
+#else
+
+#include "../soya/extras/preprocessor.h"
+#include "../soya/soyalib.h"
+static const char *RESOURCE_DIR = "resources";
+
+#endif
+
 #include <assert.h>
 
 int main()
 {
   { // Pass Through
     char *buf = NULL;
-    const char *expected = syReadFile("resources/basic.frag");
-    int res = syPreprocess("resources/basic.frag", &buf);
+    char path[1024] = {0};
+    snprintf(path, 1024, "%s%s", RESOURCE_DIR, "/basic.frag");
+    const char *expected = syReadFile(path);
+    int res = syPreprocess(path, &buf);
     assert(res == 0);
     assert(strcmp(buf, expected) == 0);
     free(buf);
@@ -17,8 +31,11 @@ int main()
   }
   { // Comment
     char *buf = NULL;
-    const char *expected = syReadFile("resources/basic.frag");
-    int res = syPreprocess("resources/comment.frag", &buf);
+    char path[1024] = {0};
+    snprintf(path, 1024, "%s%s", RESOURCE_DIR, "/basic.frag");
+    const char *expected = syReadFile(path);
+    snprintf(path, 1024, "%s%s", RESOURCE_DIR, "/comment.frag");
+    int res = syPreprocess(path, &buf);
     assert(res == 0);
     assert(strcmp(buf, expected) == 0);
     free(buf);
@@ -26,8 +43,11 @@ int main()
   }
   { // Single Include
     char *buf = NULL;
-    const char *expected = syReadFile("resources/hash.glsl");
-    int res = syPreprocess("resources/singleinclude.frag", &buf);
+    char path[1024] = {0};
+    snprintf(path, 1024, "%s%s", RESOURCE_DIR, "/hash.glsl");
+    const char *expected = syReadFile(path);
+    snprintf(path, 1024, "%s%s", RESOURCE_DIR, "/singleinclude.frag");
+    int res = syPreprocess(path, &buf);
     assert(res == 0);
     assert(strcmp(buf, expected) == 0);
     free(buf);
@@ -35,7 +55,9 @@ int main()
   }
   { // Commented include
     char *buf = NULL;
-    int res = syPreprocess("resources/commentedInclude.glsl", &buf);
+    char path[1024] = {0};
+    snprintf(path, 1024, "%s%s", RESOURCE_DIR, "/commentedInclude.glsl");
+    int res = syPreprocess(path, &buf);
     char expected[] = "void main(){}\n";
     assert(strcmp(buf, expected) == 0);
     assert(res == 0);
@@ -44,8 +66,11 @@ int main()
   {
     // 2 includes
     char *buf = NULL;
-    int res = syPreprocess("resources/doubleInclude.glsl", &buf);
-    const char *expected = syReadFile("resources/doubleHash.glsl");
+    char path[1024] = {0};
+    snprintf(path, 1024, "%s%s", RESOURCE_DIR, "/doubleInclude.glsl");
+    int res = syPreprocess(path, &buf);
+    snprintf(path, 1024, "%s%s", RESOURCE_DIR, "/doubleHash.glsl");
+    const char *expected = syReadFile(path);
     assert(res == 0);
     assert(strcmp(buf, expected) == 0);
     free(buf);

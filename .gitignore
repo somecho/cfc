@@ -6,3 +6,5 @@ tmp/
 
 
 bin/
+.cache/
+build/

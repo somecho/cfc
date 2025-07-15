@@ -4,7 +4,11 @@
 // Simple particle system in a perlin noise flow field.
 //
 
-#include "../soyalib.h"
+#ifdef USE_CMAKE_SOYA
+#include <soya/soyalib.h>
+#else
+#include "../soya/soyalib.h"
+#endif
 
 #include <time.h>
 

@@ -274,6 +274,20 @@ static inline f32 syRandf();
 
 ////////////////////////////////////////////////////////////
 //
+// MATH
+//
+
+// Maps `i` which ranges from `a` - `b` to a range from `c` - `d`
+//
+// Example:
+// ```
+// float v = syMapRand(sinf(0.5), -1., 1., 0., 1.);
+// assert((v >= 0.0 && v <= 1.0))
+// ```
+static inline f32 syMapRange(f32 i, f32 a, f32 b, f32 c, f32 d);
+
+////////////////////////////////////////////////////////////
+//
 // USER IMPLEMENTED
 //
 
@@ -518,6 +532,7 @@ static inline void syDrawPolygon(syApp *app, float x, float y, float z,
   vertices[numItems * 3 - 1] = vertices[5];
 
   syDrawUnindexed(app, vertices, NULL, numSides + 2, GL_TRIANGLE_FAN);
+  free((void *)vertices);
 }
 
 ////////////////////////////////////////////////////////////
@@ -989,6 +1004,16 @@ static inline f32 syRandf()
 
 ////////////////////////////////////////////////////////////
 //
+// MATH
+//
+
+static inline f32 syMapRange(f32 i, f32 a, f32 b, f32 c, f32 d)
+{
+  return (i - a) / (b - a) * (d - c) + c;
+}
+
+////////////////////////////////////////////////////////////
+//
 // LIFECYLE HOOKS
 //
 
@@ -1098,6 +1123,7 @@ static inline bool syMainPostConfigure(syApp *app)
 #ifndef SOYA_NO_MAIN
 int main()
 {
+  srand(time(NULL));
   int success = -1;
   if (!syMainInit())
   {
@@ -1134,6 +1160,10 @@ int main()
     app.fps = 1.0 / (app.time - prevTime);
     prevTime = app.time;
   };
+  // CLEAN UP
+  glDeleteBuffers(1, &app.renderer.vbo);
+  glDeleteBuffers(1, &app.renderer.cbo);
+  glDeleteBuffers(1, &app.renderer.ibo);
   glfwTerminate();
   return 0;
 }
