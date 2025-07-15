@@ -51,7 +51,6 @@ if(NOT ${epoxy_FOUND})
   )
   list(APPEND SOYA_DEPENDENCIES epoxy)
 endif()
-message(STATUS "Searching for libepoxy...")
 
 message(STATUS "Searching for cglm...")
 find_package(cglm)
@@ -69,7 +68,7 @@ endif()
 message(STATUS "Fetching dependencies: " ${SOYA_DEPENDENCIES})
 FetchContent_MakeAvailable(${SOYA_DEPENDENCIES})
 
-target_link_libraries(soya INTERFACE glfw epoxy png m)
+target_link_libraries(soya INTERFACE ${SOYA_DEPENDENCIES} m)
 
 option(SOYA_EXAMPLES "Build Soya Examples" OFF)
 if(${SOYA_EXAMPLES})
