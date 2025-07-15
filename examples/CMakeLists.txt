@@ -5,9 +5,14 @@ set(SOYA_EXAMPLES
   framebuffer
   data-structures
   particles
-  extras-lockfreequeue
-  extras-pipeencoder
 )
+
+if(NOT WIN32)
+  list(APPEND SOYA_EXAMPLES
+    extras-lockfreequeue
+    extras-pipeencoder
+  )
+endif()
 
 foreach(EXAMPLE IN ITEMS ${SOYA_EXAMPLES})
   add_executable(${EXAMPLE} ${EXAMPLE}.c)
