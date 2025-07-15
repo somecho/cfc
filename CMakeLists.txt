@@ -15,7 +15,7 @@ target_include_directories(soya INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 include(FetchContent)
 
 message(STATUS "Searching for glfw...")
-find_package(glfw)
+find_package(glfw QUIET)
 if(NOT ${glfw_FOUND})
   message(STATUS "Could not find glfw with find_package.")
   FetchContent_Declare(
@@ -27,21 +27,8 @@ if(NOT ${glfw_FOUND})
   list(APPEND SOYA_DEPENDENCIES glfw)
 endif()
 
-message(STATUS "Searching for libpng...")
-find_package(png)
-if(NOT ${png_FOUND})
-  message(STATUS "Could not find libpng with find_package.")
-  FetchContent_Declare(
-    png
-    GIT_REPOSITORY https://github.com/pnggroup/libpng
-    GIT_TAG v1.6.50
-    GIT_SHALLOW TRUE
-  )
-  list(APPEND SOYA_DEPENDENCIES png)
-endif()
-
 message(STATUS "Searching for cglm...")
-find_package(cglm)
+find_package(cglm QUIET)
 if(NOT ${cglm_FOUND})
   message(STATUS "Could not find cglm with find_package.")
   FetchContent_Declare(
