@@ -52,7 +52,29 @@ target_link_libraries(soya INTERFACE ${SOYA_DEPENDENCIES})
 option(SOYA_EXAMPLES "Build Soya Examples" OFF)
 if(${SOYA_EXAMPLES})
 message(STATUS "Soya Examples will be built")
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/examples)
+# add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/examples)
+set(SOYA_EXAMPLES
+  basics
+  basic-drawing
+  fragment-shader
+  framebuffer
+  data-structures
+  particles
+)
+
+if(NOT WIN32)
+  list(APPEND SOYA_EXAMPLES
+    extras-lockfreequeue
+    extras-pipeencoder
+  )
+endif()
+
+foreach(EXAMPLE IN ITEMS ${SOYA_EXAMPLES})
+  add_executable(${EXAMPLE} examples/${EXAMPLE}.c)
+  target_link_libraries(${EXAMPLE} PRIVATE soya)
+  target_compile_definitions(${EXAMPLE} PUBLIC USE_CMAKE_SOYA RESOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/resources")
+endforeach()
+
 else()
 message(STATUS "Soya Examples will not be built. Configure with -DSOYA_EXAMPLES=ON to enable.")
 endif()
