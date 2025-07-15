@@ -8,6 +8,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS true)
 set(SOYA_DEPENDENCIES)
 
 add_library(soya INTERFACE)
+target_sources(soya INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/soya/glad/glad.c)
 target_include_directories(soya INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
 
@@ -37,19 +38,6 @@ if(NOT ${png_FOUND})
     GIT_SHALLOW TRUE
   )
   list(APPEND SOYA_DEPENDENCIES png)
-endif()
-
-message(STATUS "Searching for libepoxy...")
-find_package(epoxy)
-if(NOT ${epoxy_FOUND})
-  message(STATUS "Could not find libepoxy with find_package.")
-  FetchContent_Declare(
-    epoxy
-    GIT_REPOSITORY https://github.com/anholt/libepoxy
-    GIT_TAG 1.5.10
-    GIT_SHALLOW TRUE
-  )
-  list(APPEND SOYA_DEPENDENCIES epoxy)
 endif()
 
 message(STATUS "Searching for cglm...")

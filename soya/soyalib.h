@@ -16,9 +16,7 @@
 
 #include <png.h>
 
-#include <epoxy/gl.h>
-#include <epoxy/glx.h>
-
+#include "glad/glad.h"
 #include <GLFW/glfw3.h>
 
 ////////////////////////////////////////////////////////////
@@ -1116,6 +1114,7 @@ static inline bool syMainPostConfigure(syApp *app)
 
   puts("Obtaining context");
   glfwMakeContextCurrent(app->window);
+  gladLoadGL();
   glViewport(0, 0, app->width, app->height);
   return true;
 }
