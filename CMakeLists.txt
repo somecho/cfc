@@ -43,7 +43,11 @@ endif()
 message(STATUS "Fetching dependencies: " ${SOYA_DEPENDENCIES})
 FetchContent_MakeAvailable(${SOYA_DEPENDENCIES})
 
-target_link_libraries(soya INTERFACE ${SOYA_DEPENDENCIES} m)
+if(NOT WIN32)
+  list(APPEND SOYA_DEPENDENCIES m)
+endif()
+
+target_link_libraries(soya INTERFACE ${SOYA_DEPENDENCIES})
 
 option(SOYA_EXAMPLES "Build Soya Examples" OFF)
 if(${SOYA_EXAMPLES})
