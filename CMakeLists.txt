@@ -53,6 +53,19 @@ if(NOT ${epoxy_FOUND})
 endif()
 message(STATUS "Searching for libepoxy...")
 
+message(STATUS "Searching for cglm...")
+find_package(cglm)
+if(NOT ${cglm_FOUND})
+  message(STATUS "Could not find cglm with find_package.")
+  FetchContent_Declare(
+    cglm
+    GIT_REPOSITORY https://github.com/recp/cglm
+    GIT_TAG v0.9.6
+    GIT_SHALLOW TRUE
+  )
+  list(APPEND SOYA_DEPENDENCIES cglm)
+endif()
+
 message(STATUS "Fetching dependencies: " ${SOYA_DEPENDENCIES})
 FetchContent_MakeAvailable(${SOYA_DEPENDENCIES})
 
