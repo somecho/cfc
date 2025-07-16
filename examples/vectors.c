@@ -1,24 +1,25 @@
-//
-// Example: data-structures.c
-// Description:
-// Soya has some simple data structures to help with some tasks you might need
-// to do often. Data structures shown here:
-// - Generic Array
-//
+/**
+ *
+ * Example: vectors.c
+ *
+ * This example shows how to use syVec, a simple dynamic array structure.
+ *
+ **/
 
 #define SY_NO_CONFIGURE
-
 #include <soya/soya.h>
 
-syVec(float) nums;
+syVec(float) nums;  // 1. Declaring
 
-void setup(syApp *app) { syVecInit(nums, float); }
+void setup(syApp *app) {
+  syVecInit(nums, float);  // 2. Initializing
+}
 
 void loop(syApp *app) {
-  syVecPush(nums, app->frameNum);
+  syVecPush(nums, app->frameNum);  // 3. Inserting elements
   if (app->frameNum == 12) {
     syVecDBG("%f ", nums);
-    syVecDestroy(nums);
+    syVecDestroy(nums);  // 4. Cleaning up
     glfwSetWindowShouldClose(app->window, true);
   }
 }
