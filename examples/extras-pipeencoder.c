@@ -16,9 +16,8 @@
 
 syPipeEncoder encoder;
 
-void setup(syApp *app)
-{
-  syPipeEncoderOptions opts = {0}; // First initialize `opts` to 0.
+void setup(syApp *app) {
+  syPipeEncoderOptions opts = {0};  // First initialize `opts` to 0.
   //
   // All options should be explicitly provided except for `extraInputArgs` and
   // `extraOutputArgs`.
@@ -34,25 +33,20 @@ void setup(syApp *app)
   syPipeEncoderInit(&encoder, &opts);
 }
 
-void loop(syApp *app)
-{
-  syClear(SY_RED);
+void loop(syApp *app) {
+  syApplyRgba(syClear, SY_RED);
   syTranslate(app, app->width / 2., app->height / 2., 0);
   float r = (sinf(app->frameNum / 120.0) * 0.5 + 0.5) * 250 + 100;
   syDrawPolygon(app, 0, 0, 0, r, 72);
   syResetTransformations(app);
 
-  if (app->frameNum == 0)
-  {
+  if (app->frameNum == 0) {
     syPipeEncoderStart(&encoder);
-  }
-  else if (app->frameNum >= 120 * 5) // 5 seconds with 120 fps
+  } else if (app->frameNum >= 120 * 5)  // 5 seconds with 120 fps
   {
     syPipeEncoderStop(&encoder);
     glfwSetWindowShouldClose(app->window, true);
-  }
-  else
-  {
+  } else {
     void *pixels = calloc(app->width * app->height * 3, sizeof(int));
     glReadPixels(0, 0, app->width, app->height, GL_RGB, GL_UNSIGNED_BYTE,
                  pixels);

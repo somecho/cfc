@@ -9,13 +9,9 @@
 
 syShader shader;
 
-void configure(syApp *app)
-{
-  (void)app;
-}
+void configure(syApp *app) { (void)app; }
 
-void setup(syApp *app)
-{
+void setup(syApp *app) {
   (void)app;
   char shaderPath[1024];
   sprintf(shaderPath, "%s%s", RESOURCE_DIR, "/example05.frag");
@@ -24,9 +20,8 @@ void setup(syApp *app)
   free((void *)fsSource);
 }
 
-void loop(syApp *app)
-{
-  syClear(SY_BLACK);
+void loop(syApp *app) {
+  syApplyRgba(syClear, SY_BLACK);
   syShaderBegin(app, shader);
   syShaderUniform1f(shader, "time", glfwGetTime());
   syShaderUniform2f(shader, "res", app->width, app->height);

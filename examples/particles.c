@@ -6,7 +6,7 @@
 
 #include <soya/soyalib.h>
 
-#define NUM_PARTICLES 50000 // you may need -O3 to run at high fps
+#define NUM_PARTICLES 50000  // you may need -O3 to run at high fps
 
 static float pos[NUM_PARTICLES * 3];
 static float heading[NUM_PARTICLES];
@@ -14,8 +14,7 @@ static float speed[NUM_PARTICLES];
 static uint8_t age[NUM_PARTICLES];
 static uint32_t maxAge[NUM_PARTICLES];
 
-void randomizeParticle(size_t i, int w, int h)
-{
+void randomizeParticle(size_t i, int w, int h) {
   pos[i * 3] = ((float)rand() / (float)RAND_MAX) * w;
   pos[i * 3 + 1] = ((float)rand() / (float)RAND_MAX) * h;
   heading[i] = ((float)rand() / (float)RAND_MAX) * GLM_PI * 2.f;
@@ -24,14 +23,11 @@ void randomizeParticle(size_t i, int w, int h)
   maxAge[i] = rand() % 200;
 }
 
-void updateParticles(int w, int h)
-{
+void updateParticles(int w, int h) {
   float noisef = 0.005f;
   float t = glfwGetTime() * 0.5f;
-  for (size_t i = 0; i < NUM_PARTICLES; i++)
-  {
-    if (age[i] > maxAge[i])
-    {
+  for (size_t i = 0; i < NUM_PARTICLES; i++) {
+    if (age[i] > maxAge[i]) {
       randomizeParticle(i, w, h);
       continue;
     }
@@ -43,29 +39,25 @@ void updateParticles(int w, int h)
   }
 }
 
-void configure(syApp *app)
-{
+void configure(syApp *app) {
   app->width = 1200;
   app->height = 800;
 }
 
-void setup(syApp *app)
-{
+void setup(syApp *app) {
   srand(time(NULL));
-  for (size_t i = 0; i < NUM_PARTICLES; i++)
-  {
+  for (size_t i = 0; i < NUM_PARTICLES; i++) {
     randomizeParticle(i, app->width, app->height);
     pos[i * 3 + 2] = 0;
   }
 }
 
-void loop(syApp *app)
-{
-  syClear(SY_BLACK);
+void loop(syApp *app) {
+  syApplyRgba(syClear, SY_BLACK);
   syDrawUnindexed(app, pos, NULL, NUM_PARTICLES, GL_POINTS);
   updateParticles(app->width, app->height);
 
-#ifdef PRINT_FPS // compile with -DPRINT_FPS to print the fps
+#ifdef PRINT_FPS  // compile with -DPRINT_FPS to print the fps
   printf("%f\n", app->fps);
 #endif
 }

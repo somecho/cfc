@@ -11,8 +11,7 @@
 
 syFbo fbo;
 
-void setup(syApp *app)
-{
+void setup(syApp *app) {
   // This function is called to initialize and allocate resources for the FBO.
   syFboOptions opts = {0};
   opts.width = app->width;
@@ -23,18 +22,16 @@ void setup(syApp *app)
   fbo = syFboCreate(&opts);
 }
 
-void loop(syApp *app)
-{
-  syFboBegin(&fbo); // Begin drawing to the FBO
+void loop(syApp *app) {
+  syFboBegin(&fbo);  // Begin drawing to the FBO
 
-  syClear(SY_CYAN);
-  sySetColor(app, SY_MAGENTA);
+  syApplyRgba(syClear, SY_CYAN);
+  sySetColor(app, SY_FLAT(SY_MAGENTA));
 
   i32 numPts = 80;
   SY_DEFARRAY(pts, f32);
   syArrayInit(pts, f32);
-  for (i32 i = 0; i < numPts; i++)
-  {
+  for (i32 i = 0; i < numPts; i++) {
     float x = (i / (float)numPts) * app->width;
     float y =
         (app->height * 0.5) + sinf((float)i * 0.5 + app->time * 3.0) * 200;
@@ -43,7 +40,7 @@ void loop(syApp *app)
   syDrawLines(app, pts.data, pts.len / 3);
   syArrayDestroy(pts);
 
-  syFboEnd(); // End drawing to the FBO
+  syFboEnd();  // End drawing to the FBO
 
-  syFboDraw(app, &fbo); // Draw the FBO to the screen
+  syFboDraw(app, &fbo);  // Draw the FBO to the screen
 }

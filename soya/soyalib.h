@@ -29,27 +29,15 @@
 #define SY_DEFAULT_WINDOW_HEIGHT 720
 #define SY_DEFAULT_WINDOW_SAMPLES 8
 
-#define SY_BLACK 0, 0, 0, 1
-#define SY_BLUE 0, 0, 1, 1
-#define SY_CYAN 0, 1, 1, 1
-#define SY_GREEN 0, 1, 0, 1
-#define SY_MAGENTA 1, 0, 1, 1
-#define SY_RED 1, 0, 0, 1
-#define SY_WHITE 1, 1, 1, 1
-#define SY_YELLOW 1, 1, 0, 1
+#include "soyacolor.h"
+#include "soyasugar.h"
 
 ////////////////////////////////////////////////////////////
 //
 // TYPE ALIASES
 //
 
-typedef float f32;
-typedef int i32;
-typedef uint8_t u8;
-typedef uint16_t u16;
-typedef uint32_t u32;
-typedef uint64_t u64;
-typedef size_t usize;
+#include "soyatypedefs.h"
 
 ////////////////////////////////////////////////////////////
 //
@@ -176,56 +164,53 @@ static inline void syVertexAttribute4f(GLuint index);
 // ARRAY
 //
 
-#define SY_DEFARRAY(name, type)                                                \
-  struct                                                                       \
-  {                                                                            \
-    usize len, cap;                                                            \
-    type *data;                                                                \
+#define SY_DEFARRAY(name, type) \
+  struct {                      \
+    usize len, cap;             \
+    type *data;                 \
   } name;
 
-#define syArrayInit(arr, type)                                                 \
-  (arr).len = 0;                                                               \
-  (arr).cap = 4;                                                               \
+#define syArrayInit(arr, type) \
+  (arr).len = 0;               \
+  (arr).cap = 4;               \
   (arr).data = (type *)calloc((arr).cap, sizeof(float))
 
-#define syArrayPrint(arr)                                                      \
-  printf("Length: %zu\n", arr.len);                                            \
-  printf("Capacity: %zu\n", arr.cap);                                          \
-  printf("Data: ");                                                            \
-  for (usize i = 0; i < arr.len; i++)                                          \
-  {                                                                            \
-    const char *fmt = _Generic((arr.data[i]), float: "%f ", u32: "%u ");       \
-    printf(fmt, arr.data[i]);                                                  \
-  }                                                                            \
+#define syArrayPrint(arr)                                                \
+  printf("Length: %zu\n", arr.len);                                      \
+  printf("Capacity: %zu\n", arr.cap);                                    \
+  printf("Data: ");                                                      \
+  for (usize i = 0; i < arr.len; i++) {                                  \
+    const char *fmt = _Generic((arr.data[i]), float: "%f ", u32: "%u "); \
+    printf(fmt, arr.data[i]);                                            \
+  }                                                                      \
   printf("\n");
 
-#define syArrayDestroy(arr)                                                    \
-  free(arr.data);                                                              \
+#define syArrayDestroy(arr) \
+  free(arr.data);           \
   arr.data = NULL;
 
-#define syArrayPush(arr, val)                                                  \
-  if ((arr).len + 1 >= (arr).cap)                                              \
-  {                                                                            \
-    (arr).data = realloc((arr).data, (arr).cap * 2 * sizeof((arr).data[0]));   \
-    (arr).cap *= 2;                                                            \
-  }                                                                            \
-  (arr).data[(arr).len] = (val);                                               \
+#define syArrayPush(arr, val)                                                \
+  if ((arr).len + 1 >= (arr).cap) {                                          \
+    (arr).data = realloc((arr).data, (arr).cap * 2 * sizeof((arr).data[0])); \
+    (arr).cap *= 2;                                                          \
+  }                                                                          \
+  (arr).data[(arr).len] = (val);                                             \
   (arr).len++;
 
-#define syArrayPush3(arr, v1, v2, v3)                                          \
-  syArrayPush((arr), (v1));                                                    \
-  syArrayPush((arr), (v2));                                                    \
+#define syArrayPush3(arr, v1, v2, v3) \
+  syArrayPush((arr), (v1));           \
+  syArrayPush((arr), (v2));           \
   syArrayPush((arr), (v3));
 
-#define syArrayPush4(arr, v1, v2, v3, v4)                                      \
-  syArrayPush3((arr), (v1), (v2), (v3));                                       \
+#define syArrayPush4(arr, v1, v2, v3, v4) \
+  syArrayPush3((arr), (v1), (v2), (v3));  \
   syArrayPush((arr), (v4));
 
-#define syArrayPushVec3(arr, vec3)                                             \
+#define syArrayPushVec3(arr, vec3) \
   syArrayPush3((arr), (vec3).x, (vec3).y, (vec3).z);
 
-#define syArrayPush2Vec3(arr, vec3A, vec3B)                                    \
-  syArrayPushVec3(arr, vec3A);                                                 \
+#define syArrayPush2Vec3(arr, vec3A, vec3B) \
+  syArrayPushVec3(arr, vec3A);              \
   syArrayPushVec3(arr, vec3B);
 
 #define syArraySizeb(arr) arr.len == 0 ? 0 : sizeof(arr.data[0]) * arr.len
@@ -259,24 +244,7 @@ static inline const char *syReadFile(const char *filePath);
 // Random
 //
 
-static inline i32 syRandi();
-
-// @returns 0-1
-static inline f32 syRandf();
-
-////////////////////////////////////////////////////////////
-//
-// MATH
-//
-
-// Maps `i` which ranges from `a` - `b` to a range from `c` - `d`
-//
-// Example:
-// ```
-// float v = syMapRand(sinf(0.5), -1., 1., 0., 1.);
-// assert((v >= 0.0 && v <= 1.0))
-// ```
-static inline f32 syMapRange(f32 i, f32 a, f32 b, f32 c, f32 d);
+#include "soyamath.h"
 
 ////////////////////////////////////////////////////////////
 //
@@ -288,17 +256,11 @@ extern void setup(syApp *app);
 extern void loop(syApp *app);
 
 #ifdef SY_NO_SETUP
-void setup(syApp *app)
-{
-  (void)app;
-}
+void setup(syApp *app) { (void)app; }
 #endif
 
 #ifdef SY_NO_CONFIGURE
-void configure(syApp *app)
-{
-  (void)app;
-}
+void configure(syApp *app) { (void)app; }
 #endif
 
 ////////////////////////////////////////////////////////////
@@ -312,8 +274,7 @@ void configure(syApp *app)
 // syRenderer
 //
 
-typedef struct syRenderer
-{
+typedef struct syRenderer {
   GLuint vao, vbo, cbo, ibo;
   syShader shader;
   syShader defaultShader;
@@ -322,8 +283,7 @@ typedef struct syRenderer
   float color[4];
 } syRenderer;
 
-static inline void syRendererInit(syRenderer *r, int width, int height)
-{
+static inline void syRendererInit(syRenderer *r, int width, int height) {
   glGenVertexArrays(1, &r->vao);
   glGenBuffers(1, &r->vbo);
   glGenBuffers(1, &r->cbo);
@@ -345,8 +305,7 @@ static inline void syRendererInit(syRenderer *r, int width, int height)
 // syApp
 //
 
-typedef struct syApp
-{
+typedef struct syApp {
   // Window width. Default: 1280
   int width;
 
@@ -384,8 +343,7 @@ typedef struct syApp
   void (*onMousePressed)(syApp *app, int button, double x, double y);
 } syApp;
 
-static inline void syAppPreConfigure(syApp *app)
-{
+static inline void syAppPreConfigure(syApp *app) {
   app->width = SY_DEFAULT_WINDOW_WIDTH;
   app->height = SY_DEFAULT_WINDOW_HEIGHT;
   app->samples = SY_DEFAULT_WINDOW_SAMPLES;
@@ -399,14 +357,12 @@ static inline void syAppPreConfigure(syApp *app)
 // DRAWING
 //
 
-static inline void syClear(float r, float g, float b, float a)
-{
+static inline void syClear(float r, float g, float b, float a) {
   glClearColor(r, g, b, a);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-static inline void sySetColor(syApp *app, float r, float g, float b, float a)
-{
+static inline void sySetColor(syApp *app, float r, float g, float b, float a) {
   app->renderer.color[0] = r;
   app->renderer.color[1] = g;
   app->renderer.color[2] = b;
@@ -414,24 +370,19 @@ static inline void sySetColor(syApp *app, float r, float g, float b, float a)
 }
 
 static inline void syDrawUnindexed(syApp *app, float *vertices, float *colors,
-                                   usize n, GLenum mode)
-{
+                                   usize n, GLenum mode) {
   glBindVertexArray(app->renderer.vao);
   syWriteArrayBuffer(app->renderer.vbo, sizeof(float) * n * 3, vertices);
   syVertexAttribute3f(0);
 
-  if (colors == 0)
-  {
+  if (colors == 0) {
     float *c = calloc(n * 4, sizeof(float));
-    for (size_t i = 0; i < n; i++)
-    {
+    for (size_t i = 0; i < n; i++) {
       memcpy(&c[i * 4], app->renderer.color, sizeof(app->renderer.color));
     }
     syWriteArrayBuffer(app->renderer.cbo, sizeof(float) * n * 4, c);
     free(c);
-  }
-  else
-  {
+  } else {
     syWriteArrayBuffer(app->renderer.cbo, sizeof(float) * n * 4, colors);
   }
   syVertexAttribute4f(1);
@@ -442,27 +393,21 @@ static inline void syDrawUnindexed(syApp *app, float *vertices, float *colors,
 
 static inline void syDrawIndexed(syApp *app, float *vertices, float *colors,
                                  u32 *indices, usize numVertices,
-                                 usize numIndices, GLenum mode)
-{
-
+                                 usize numIndices, GLenum mode) {
   glBindVertexArray(app->renderer.vao);
 
   syWriteArrayBuffer(app->renderer.vbo, sizeof(float) * numVertices * 3,
                      vertices);
   syVertexAttribute3f(0);
 
-  if (colors == 0)
-  {
+  if (colors == 0) {
     float *c = calloc(numVertices * 4, sizeof(float));
-    for (size_t i = 0; i < numVertices; i++)
-    {
+    for (size_t i = 0; i < numVertices; i++) {
       memcpy(&c[i * 4], app->renderer.color, sizeof(app->renderer.color));
     }
     syWriteArrayBuffer(app->renderer.cbo, sizeof(float) * numVertices * 4, c);
     free(c);
-  }
-  else
-  {
+  } else {
     syWriteArrayBuffer(app->renderer.cbo, sizeof(float) * numVertices * 4,
                        colors);
   }
@@ -471,40 +416,34 @@ static inline void syDrawIndexed(syApp *app, float *vertices, float *colors,
 
 static inline void syDrawTriangle(syApp *app, float x1, float y1, float z1,
                                   float x2, float y2, float z2, float x3,
-                                  float y3, float z3)
-{
+                                  float y3, float z3) {
   float vertices[] = {x1, y1, z1, x2, y2, z2, x3, y3, z3};
   syDrawUnindexed(app, vertices, NULL, 3, GL_TRIANGLES);
 }
 
 static inline void syDrawQuad(syApp *app, float x, float y, float width,
-                              float height)
-{
+                              float height) {
   float vertices[] = {x,         y,          0, x + width, y,          0,
                       x + width, y + height, 0, x,         y + height, 0};
   syDrawUnindexed(app, vertices, NULL, 4, GL_TRIANGLE_FAN);
 }
 
 static inline void syDrawLine(syApp *app, float x1, float y1, float z1,
-                              float x2, float y2, float z2)
-{
+                              float x2, float y2, float z2) {
   float vertices[] = {x1, y1, z1, x2, y2, z2};
   syDrawUnindexed(app, vertices, NULL, 2, GL_LINES);
 }
 
-static inline void syDrawLines(syApp *app, float *vertices, int n)
-{
+static inline void syDrawLines(syApp *app, float *vertices, int n) {
   syDrawUnindexed(app, vertices, NULL, n, GL_LINE_STRIP);
 }
 
 static inline void syDrawPolygon(syApp *app, float x, float y, float z,
-                                 float radius, usize numSides)
-{
-  if (numSides < 3)
-  {
+                                 float radius, usize numSides) {
+  if (numSides < 3) {
     perror("numSides must be greater than 3");
   }
-  usize numItems = numSides + 2; // 1 extra for the center and 1 for the end
+  usize numItems = numSides + 2;  // 1 extra for the center and 1 for the end
   float *vertices = (float *)calloc(numItems * 3, sizeof(float));
 
   vertices[0] = x;
@@ -512,8 +451,7 @@ static inline void syDrawPolygon(syApp *app, float x, float y, float z,
   vertices[2] = z;
 
   float t = GLM_PI * 2.f / (float)numSides;
-  for (size_t i = 0; i < numSides; i++)
-  {
+  for (size_t i = 0; i < numSides; i++) {
     vertices[(i + 1) * 3] = cosf(t * i) * radius + x;
     vertices[(i + 1) * 3 + 1] = sinf(t * i) * radius + y;
     vertices[(i + 1) * 3 + 2] = 0;
@@ -532,21 +470,18 @@ static inline void syDrawPolygon(syApp *app, float x, float y, float z,
 // TRANSFORMATIONS
 //
 
-static inline void syTranslate(syApp *app, float x, float y, float z)
-{
+static inline void syTranslate(syApp *app, float x, float y, float z) {
   app->renderer.modelMatrix =
       glms_translate(app->renderer.modelMatrix, (vec3s){{x, y, z}});
 }
 
-static inline void syRotate(syApp *app, float angle, float x, float y, float z)
-{
-
+static inline void syRotate(syApp *app, float angle, float x, float y,
+                            float z) {
   app->renderer.modelMatrix =
       glms_rotate(app->renderer.modelMatrix, angle, (vec3s){{x, y, z}});
 }
 
-static inline void syResetTransformations(syApp *app)
-{
+static inline void syResetTransformations(syApp *app) {
   app->renderer.modelMatrix = glms_mat4_identity();
 }
 
@@ -612,8 +547,7 @@ static const char *SY_RGB_FBO_FRAGMENT_SHADER =
     "}\n\0";
 
 static inline GLuint syShaderProgramLoadFromSource(
-    const char *fragmentShaderSource, const char *vertexShaderSource)
-{
+    const char *fragmentShaderSource, const char *vertexShaderSource) {
   const char *fsSrc = fragmentShaderSource == NULL ? SY_DEFAULT_FRAGMENT_SHADER
                                                    : fragmentShaderSource;
   const char *vsSrc = vertexShaderSource == NULL ? SY_DEFAULT_VERTEX_SHADER
@@ -632,20 +566,17 @@ static inline GLuint syShaderProgramLoadFromSource(
   return shader;
 }
 
-static inline GLuint syShaderProgramLoadDefault()
-{
+static inline GLuint syShaderProgramLoadDefault() {
   return syShaderProgramLoadFromSource(SY_DEFAULT_FRAGMENT_SHADER,
                                        SY_DEFAULT_VERTEX_SHADER);
 }
 
 static inline GLuint syShaderLoadFromSource(const char *shaderSource,
-                                            GLenum shaderType)
-{
+                                            GLenum shaderType) {
   GLuint shader = glCreateShader(shaderType);
   glShaderSource(shader, 1, &shaderSource, NULL);
   glCompileShader(shader);
-  if (!syShaderCompileSuccess(shader))
-  {
+  if (!syShaderCompileSuccess(shader)) {
     const char *log = syShaderInfoLog(shader);
     perror(log);
     free((void *)log);
@@ -655,44 +586,38 @@ static inline GLuint syShaderLoadFromSource(const char *shaderSource,
 // @returns a `GLuint` representing the shader compiled from `shaderPath` and
 // given the `shaderType`. This operation may fail.
 static inline GLuint syShaderLoadFromFile(const char *shaderPath,
-                                          GLenum shaderType)
-{
+                                          GLenum shaderType) {
   const char *src = syReadFile(shaderPath);
   GLuint shader = syShaderLoadFromSource(src, shaderType);
   free((void *)src);
   return shader;
 }
 
-static inline void syShaderSetRendererUniforms(syRenderer *r, syShader s)
-{
+static inline void syShaderSetRendererUniforms(syRenderer *r, syShader s) {
   mat4s mat =
       glms_mul(r->projectionMatrix, (glms_mul(r->viewMatrix, r->modelMatrix)));
   syShaderUniformMat4fv(s, "modelViewProjectionMatrix", (float *)&mat);
 }
 static inline void syShaderUniform1f(GLuint shader, const char *uniformName,
-                                     float f)
-{
+                                     float f) {
   GLint u = glGetUniformLocation(shader, uniformName);
   glUniform1f(u, f);
 }
 
 static inline void syShaderUniform2f(GLuint shader, const char *uniformName,
-                                     float f1, float f2)
-{
+                                     float f1, float f2) {
   GLint u = glGetUniformLocation(shader, uniformName);
   glUniform2f(u, f1, f2);
 }
 
 static inline void syShaderUniformMat4fv(GLuint shader, const char *uniformName,
-                                         const float *value)
-{
+                                         const float *value) {
   GLint u = glGetUniformLocation(shader, uniformName);
   glUniformMatrix4fv(u, 1, GL_FALSE, value);
 }
 
 static inline void syShaderUniformTexture(GLuint shader, const char *name,
-                                          GLuint texture)
-{
+                                          GLuint texture) {
   glActiveTexture(GL_TEXTURE0 + texture);
   glBindTexture(GL_TEXTURE_2D, texture);
   GLuint uTex = glGetUniformLocation(shader, name);
@@ -700,29 +625,25 @@ static inline void syShaderUniformTexture(GLuint shader, const char *name,
 }
 
 // @returns `true` if `shader` has compiled susyessfully. Otherwise `false`.
-static inline bool syShaderCompileSuccess(const GLuint shader)
-{
+static inline bool syShaderCompileSuccess(const GLuint shader) {
   int susyess;
   glGetShaderiv(shader, GL_COMPILE_STATUS, &susyess);
   return susyess == 1;
 }
 
 // @returns the info log to `shader` as a `const char *` owned by the caller.
-static inline const char *syShaderInfoLog(const GLuint shader)
-{
+static inline const char *syShaderInfoLog(const GLuint shader) {
   char *buffer = (char *)malloc(512);
   glGetShaderInfoLog(shader, 512, NULL, buffer);
   return buffer;
 }
 
-static inline void syShaderBegin(syApp *app, syShader shader)
-{
+static inline void syShaderBegin(syApp *app, syShader shader) {
   glUseProgram(shader);
   app->renderer.shader = shader;
 }
 
-static inline void syShaderEnd(syApp *app)
-{
+static inline void syShaderEnd(syApp *app) {
   glUseProgram(app->renderer.defaultShader);
   app->renderer.shader = app->renderer.defaultShader;
 }
@@ -733,14 +654,12 @@ static inline void syShaderEnd(syApp *app)
 //
 
 static inline void syWriteBuffer(GLenum target, GLuint buffer, GLsizeiptr size,
-                                 const void *data, GLenum usage)
-{
+                                 const void *data, GLenum usage) {
   glBindBuffer(target, buffer);
   glBufferData(target, size, data, usage);
 }
 
-static inline void syWriteArrayBuffer(GLuint buffer, size_t size, void *data)
-{
+static inline void syWriteArrayBuffer(GLuint buffer, size_t size, void *data) {
   syWriteBuffer(GL_ARRAY_BUFFER, buffer, size, data, GL_DYNAMIC_DRAW);
 }
 
@@ -753,24 +672,20 @@ static inline void syWriteArrayBuffer(GLuint buffer, size_t size, void *data)
 // `glEnableVertexAttribArray`.
 static inline void syVertexAttribute(GLuint index, GLint size, GLenum type,
                                      GLboolean normalized, GLsizei stride,
-                                     const void *pointer)
-{
+                                     const void *pointer) {
   glVertexAttribPointer(index, size, type, normalized, stride, pointer);
   glEnableVertexAttribArray(index);
 }
 
-static inline void syVertexAttribute2f(GLuint index)
-{
+static inline void syVertexAttribute2f(GLuint index) {
   syVertexAttribute(index, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), NULL);
 }
 
-static inline void syVertexAttribute3f(GLuint index)
-{
+static inline void syVertexAttribute3f(GLuint index) {
   syVertexAttribute(index, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), NULL);
 }
 
-static inline void syVertexAttribute4f(GLuint index)
-{
+static inline void syVertexAttribute4f(GLuint index) {
   syVertexAttribute(index, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), NULL);
 }
 
@@ -779,23 +694,20 @@ static inline void syVertexAttribute4f(GLuint index)
 // syFbo
 //
 
-typedef struct syFbo
-{
+typedef struct syFbo {
   GLuint framebuffer;
   GLuint texture;
   GLenum format;
   syShader shader;
 } syFbo;
 
-typedef struct syFboOptions
-{
+typedef struct syFboOptions {
   i32 width, height;
   GLenum internalFormat, format, type;
   GLint magFilter, minFilter;
 } syFboOptions;
 
-static inline syFbo syFboCreate(syFboOptions *options)
-{
+static inline syFbo syFboCreate(syFboOptions *options) {
   syFbo fbo;
   // Generate framebuffer
   glGenFramebuffers(1, &fbo.framebuffer);
@@ -840,18 +752,13 @@ static inline syFbo syFboCreate(syFboOptions *options)
   return fbo;
 }
 
-static inline void syFboBegin(syFbo *fbo)
-{
+static inline void syFboBegin(syFbo *fbo) {
   glBindFramebuffer(GL_FRAMEBUFFER, fbo->framebuffer);
 }
 
-static inline void syFboEnd()
-{
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
+static inline void syFboEnd() { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
 
-static inline void syFboDraw(syApp *app, syFbo *fbo)
-{
+static inline void syFboDraw(syApp *app, syFbo *fbo) {
   syShaderBegin(app, fbo->shader);
   syShaderUniformTexture(fbo->shader, "tex0", fbo->texture);
   syShaderUniform2f(fbo->shader, "res", app->width, app->height);
@@ -864,11 +771,9 @@ static inline void syFboDraw(syApp *app, syFbo *fbo)
 // IO - file reading and writing
 //
 
-static inline const char *syReadFile(const char *filePath)
-{
+static inline const char *syReadFile(const char *filePath) {
   FILE *file = fopen(filePath, "rb");
-  if (!file)
-  {
+  if (!file) {
     perror("Failed to open file");
     return NULL;
   }
@@ -876,50 +781,23 @@ static inline const char *syReadFile(const char *filePath)
   fseek(file, 0, SEEK_END);
   long fileSize = ftell(file);
   rewind(file);
-  if (fileSize < 0)
-  {
+  if (fileSize < 0) {
     perror("Failed to determine file size");
     return NULL;
   }
 
   char *buffer = (char *)malloc((size_t)fileSize + 1);
-  if (!buffer)
-  {
+  if (!buffer) {
     perror("Failed to allocate buffer");
     fclose(file);
     return NULL;
   }
 
   size_t bytesRead = fread(buffer, 1, (size_t)fileSize, file);
-  buffer[bytesRead] = '\0'; // Null-terminate
+  buffer[bytesRead] = '\0';  // Null-terminate
 
   fclose(file);
   return buffer;
-}
-
-////////////////////////////////////////////////////////////
-//
-// Random
-//
-
-static inline i32 syRandi()
-{
-  return rand();
-}
-
-static inline f32 syRandf()
-{
-  return (float)syRandi() / (float)RAND_MAX;
-}
-
-////////////////////////////////////////////////////////////
-//
-// MATH
-//
-
-static inline f32 syMapRange(f32 i, f32 a, f32 b, f32 c, f32 d)
-{
-  return (i - a) / (b - a) * (d - c) + c;
 }
 
 ////////////////////////////////////////////////////////////
@@ -941,15 +819,13 @@ static inline bool syMainPostConfigure(syApp *app);
 // CALLBACKS
 //
 
-static inline void syOnError(int error_code, const char *description)
-{
+static inline void syOnError(int error_code, const char *description) {
   (void)error_code;
   perror(description);
 }
 
 static inline void syOnFrameBufferSize(GLFWwindow *window, int width,
-                                       int height)
-{
+                                       int height) {
   (void)window;
   glViewport(0, 0, width, height);
   /* SY_DEFAULT_PROJECTION_MATRIX = */
@@ -957,32 +833,25 @@ static inline void syOnFrameBufferSize(GLFWwindow *window, int width,
 }
 
 static inline void syOnKey(GLFWwindow *window, int key, int scancode,
-                           int action, int mods)
-{
+                           int action, int mods) {
   (void)scancode;
   (void)mods;
-  if (action == GLFW_PRESS)
-  {
+  if (action == GLFW_PRESS) {
     syApp *app = (syApp *)glfwGetWindowUserPointer(window);
-    if (app->onKeyPressed != NULL)
-    {
+    if (app->onKeyPressed != NULL) {
       app->onKeyPressed(key);
     }
-    if (key == GLFW_KEY_ESCAPE)
-    {
+    if (key == GLFW_KEY_ESCAPE) {
       glfwSetWindowShouldClose(window, 1);
     }
   }
 }
 
 static inline void syOnMouseButton(GLFWwindow *window, int button, int action,
-                                   int mods)
-{
-  if (action == GLFW_PRESS)
-  {
+                                   int mods) {
+  if (action == GLFW_PRESS) {
     syApp *app = (syApp *)glfwGetWindowUserPointer(window);
-    if (app->onMousePressed != NULL)
-    {
+    if (app->onMousePressed != NULL) {
       double x, y;
       glfwGetCursorPos(window, &x, &y);
       app->onMousePressed(app, button, x, app->height - y);
@@ -995,19 +864,16 @@ static inline void syOnMouseButton(GLFWwindow *window, int button, int action,
 // LIFECYLE HOOKS
 //
 
-static inline bool syMainInit()
-{
+static inline bool syMainInit() {
   glfwSetErrorCallback(syOnError);
   puts("Initializing GLFW");
-  if (!glfwInit())
-  {
+  if (!glfwInit()) {
     return false;
   }
   return true;
 }
 
-static inline bool syMainPostConfigure(syApp *app)
-{
+static inline bool syMainPostConfigure(syApp *app) {
   printf("GL Version: %i.%i\n", app->glVersionMajor, app->glVersionMinor);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, app->glVersionMajor);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, app->glVersionMinor);
@@ -1018,8 +884,7 @@ static inline bool syMainPostConfigure(syApp *app)
 
       glfwCreateWindow(app->width, app->height, app->title, NULL, NULL);
 
-  if (!app->window)
-  {
+  if (!app->window) {
     glfwTerminate();
     return false;
   }
@@ -1032,20 +897,17 @@ static inline bool syMainPostConfigure(syApp *app)
 }
 
 #ifndef SOYA_NO_MAIN
-int main()
-{
+int main() {
   srand(time(NULL));
   int success = -1;
-  if (!syMainInit())
-  {
+  if (!syMainInit()) {
     return success;
   }
 
   syApp app = {0};
   syAppPreConfigure(&app);
   configure(&app);
-  if (!syMainPostConfigure(&app))
-  {
+  if (!syMainPostConfigure(&app)) {
     return success;
   };
   syRendererInit(&app.renderer, app.width, app.height);
@@ -1061,8 +923,7 @@ int main()
   glfwSetMouseButtonCallback(app.window, syOnMouseButton);
 
   double prevTime = glfwGetTime();
-  while (!glfwWindowShouldClose(app.window))
-  {
+  while (!glfwWindowShouldClose(app.window)) {
     loop(&app);
     glfwSwapBuffers(app.window);
     glfwPollEvents();
@@ -1080,4 +941,4 @@ int main()
 }
 #endif
 
-#endif // SOYA_LIB_H
+#endif  // SOYA_LIB_H

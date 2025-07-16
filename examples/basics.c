@@ -16,8 +16,7 @@
 // window. You can leave it blank to use the default configuration. To know what
 // the defaults are, check out the `syAppPreconfigure` function in `soyalib.h`.
 //
-void configure(syApp *app)
-{
+void configure(syApp *app) {
   //
   // Setting window width and height
   //
@@ -35,8 +34,7 @@ void configure(syApp *app)
 // app's window has been created and the OpenGL context has been set to it. This
 // means that raw OpenGL functions can be used in `setup`.
 //
-void setup(syApp *app)
-{
+void setup(syApp *app) {
   //
   // This function is run once.
   //
@@ -47,8 +45,7 @@ void setup(syApp *app)
 //
 // Finally, we have the `loop` function. It is run every frame.
 //
-void loop(syApp *app)
-{
-  syClear(SY_BLUE);
+void loop(syApp *app) {
+  syClear(SY_FLAT(SY_BLUE));
   printf("Frame number: %zu @ %.1f fps\n", app->frameNum, app->fps);
 }
