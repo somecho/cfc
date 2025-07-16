@@ -29,16 +29,16 @@ void loop(syApp *app) {
   sySetColor(app, SY_MAGENTA.r, SY_MAGENTA.g, SY_MAGENTA.a, SY_MAGENTA.b);
 
   i32 numPts = 80;
-  SY_DEFARRAY(pts, f32);
-  syArrayInit(pts, f32);
+  syVec(float) pts;
+  syVecInit(pts, f32);
   for (i32 i = 0; i < numPts; i++) {
     float x = (i / (float)numPts) * app->width;
     float y =
         (app->height * 0.5) + sinf((float)i * 0.5 + app->time * 3.0) * 200;
-    syArrayPush3(pts, x, y, 0);
+    syVecPush3(pts, x, y, 0);
   }
   syDrawLines(app, pts.data, pts.len / 3);
-  syArrayDestroy(pts);
+  syVecDestroy(pts);
 
   syFboEnd();  // End drawing to the FBO
 
