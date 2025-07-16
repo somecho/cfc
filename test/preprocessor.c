@@ -1,9 +1,8 @@
-#define SOYA_NO_MAIN
 
 #include <assert.h>
 
-#include <soya/extras/preprocessor.h>
-#include <soya/soya.h>
+#include <soya/lib/io.h>
+#include <soya/lib/preprocessor.h>
 
 static const char *RESOURCE_DIR = SOYA_TEST_RESOURCES;
 

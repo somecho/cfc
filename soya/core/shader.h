@@ -5,7 +5,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#include <soya/defaultshaders.h>
+#include <soya/lib/preprocessor.h>
+#include <soya/core/defaultshaders.h>
 
 #include <soya/glad/glad.h>
 
@@ -61,6 +62,42 @@ static inline GLuint syShaderProgramLoadFromSource(
 static inline GLuint syShaderProgramLoadDefault() {
   return syShaderProgramLoadFromSource(SY_DEFAULT_FRAGMENT_SHADER,
                                        SY_DEFAULT_VERTEX_SHADER);
+}
+
+// @returns a `GLuint` representing the shader compiled from `shaderPath` and
+// given the `shaderType`. This operation may fail.
+static inline GLuint syShaderLoadFromFile(char *shaderPath, GLenum shaderType) {
+  char *src = NULL;
+  syPreprocess(shaderPath, &src);
+  GLuint shader = syShaderLoadFromSource(src, shaderType);
+  free((void *)src);
+  return shader;
+}
+
+static inline void syShaderUniform1f(GLuint shader, const char *uniformName,
+                                     float f) {
+  GLint u = glGetUniformLocation(shader, uniformName);
+  glUniform1f(u, f);
+}
+
+static inline void syShaderUniform2f(GLuint shader, const char *uniformName,
+                                     float f1, float f2) {
+  GLint u = glGetUniformLocation(shader, uniformName);
+  glUniform2f(u, f1, f2);
+}
+
+static inline void syShaderUniformMat4fv(GLuint shader, const char *uniformName,
+                                         const float *value) {
+  GLint u = glGetUniformLocation(shader, uniformName);
+  glUniformMatrix4fv(u, 1, GL_FALSE, value);
+}
+
+static inline void syShaderUniformTexture(GLuint shader, const char *name,
+                                          GLuint texture) {
+  glActiveTexture(GL_TEXTURE0 + texture);
+  glBindTexture(GL_TEXTURE_2D, texture);
+  GLuint uTex = glGetUniformLocation(shader, name);
+  glUniform1i(uTex, texture);
 }
 
 #endif  // _SOYA_SHADER_H

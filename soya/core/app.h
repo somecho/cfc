@@ -3,8 +3,8 @@
 
 #include <stdint.h>
 
-#include <soya/defaults.h>
-#include <soya/renderer.h>
+#include <soya/core/defaults.h>
+#include <soya/core/renderer.h>
 
 #include <GLFW/glfw3.h>
 

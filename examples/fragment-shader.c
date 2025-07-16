@@ -21,10 +21,10 @@ void setup(syApp *app) {
 }
 
 void loop(syApp *app) {
-  syApplyRgba(syClear, SY_BLACK);
-  syShaderBegin(app, shader);
+  syClear(SY_BLACK);
+  syBeginShader(app, shader);
   syShaderUniform1f(shader, "time", glfwGetTime());
   syShaderUniform2f(shader, "res", app->width, app->height);
   syDrawQuad(app, 0, 0, app->width, app->height);
-  syShaderEnd(app);
+  syEndShader(app);
 }

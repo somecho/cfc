@@ -1,7 +1,7 @@
 #ifndef _SOYA_RENDERER_H
 #define _SOYA_RENDERER_H
 
-#include <soya/shader.h>
+#include <soya/core/shader.h>
 
 #include <cglm/struct.h>
 #include <soya/glad/glad.h>
@@ -29,6 +29,12 @@ static inline void syRendererInit(syRenderer *r, int width, int height) {
   r->shader = syShaderProgramLoadDefault();
   r->defaultShader = r->shader;
   glUseProgram(r->shader);
+}
+
+static inline void syRendererSetShaderUniforms(syRenderer *r, syShader s) {
+  mat4s mat =
+      glms_mul(r->projectionMatrix, (glms_mul(r->viewMatrix, r->modelMatrix)));
+  syShaderUniformMat4fv(s, "modelViewProjectionMatrix", (float *)&mat);
 }
 
 #endif  // _SOYA_RENDERER_H

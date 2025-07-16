@@ -25,13 +25,13 @@ void setup(syApp *app) {
 void loop(syApp *app) {
   syFboBegin(&fbo);  // Begin drawing to the FBO
 
-  syApplyRgba(syClear, SY_CYAN);
-  sySetColor(app, SY_MAGENTA.r, SY_MAGENTA.g, SY_MAGENTA.a, SY_MAGENTA.b);
+  syClear(SY_CYAN);
+  sySetColor(app, SY_MAGENTA);
 
-  i32 numPts = 80;
+  int numPts = 80;
   syVec(float) pts;
-  syVecInit(pts, f32);
-  for (i32 i = 0; i < numPts; i++) {
+  syVecInit(pts, float);
+  for (int i = 0; i < numPts; i++) {
     float x = (i / (float)numPts) * app->width;
     float y =
         (app->height * 0.5) + sinf((float)i * 0.5 + app->time * 3.0) * 200;

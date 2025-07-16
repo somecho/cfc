@@ -53,7 +53,7 @@ void setup(syApp *app) {
 }
 
 void loop(syApp *app) {
-  syApplyRgba(syClear, SY_BLACK);
+  syClear(SY_BLACK);
   syDrawUnindexed(app, pos, NULL, NUM_PARTICLES, GL_POINTS);
   updateParticles(app->width, app->height);
 

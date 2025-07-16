@@ -6,12 +6,6 @@
 #ifndef SOYA_PREPROCESSOR_H_
 #define SOYA_PREPROCESSOR_H_
 
-/*
- * SOYA PREPROCESSOR
- * This header provides `syPreprocess`. All other functions are internal
- * implementation details.
- **/
-
 /**
  * A simple preprocessor similar to what C/C++ compilers do. It replaces
  * `#include` directives with the contents of the path specified in the
@@ -38,8 +32,7 @@ static const char INCLUDE_LITERAL[] = "include";
 #define PREPROCESSOR_CANNOT_OPEN_FILE 0x00010002
 #define PREPROCESSOR_CANNOT_OPEN_INCLUDE_FILE 0x00010003
 
-typedef struct syPreprocessingState
-{
+typedef struct syPreprocessingState {
   // File to preprocess
   FILE *file;
   int error;
@@ -52,10 +45,8 @@ typedef struct syPreprocessingState
   int justEmbeddedInclude;
 } syPreprocessingState;
 
-static inline void syPreprocessorCleanup(syPreprocessingState *state)
-{
-  if (state->file)
-  {
+static inline void syPreprocessorCleanup(syPreprocessingState *state) {
+  if (state->file) {
     fclose(state->file);
   }
   free((void *)state->workingDir);
@@ -63,34 +54,28 @@ static inline void syPreprocessorCleanup(syPreprocessingState *state)
 }
 
 static inline void syPreprocessorOpenFile(char *filepath,
-                                          syPreprocessingState *state)
-{
+                                          syPreprocessingState *state) {
   state->file = fopen(filepath, "rb");
-  if (state->file == NULL)
-  {
+  if (state->file == NULL) {
     state->error = PREPROCESSOR_CANNOT_OPEN_FILE;
     return;
   }
 }
-static inline void syPreprocessorSetFilesize(syPreprocessingState *state)
-{
-  if (state->file == NULL)
-  {
+static inline void syPreprocessorSetFilesize(syPreprocessingState *state) {
+  if (state->file == NULL) {
     state->error = PREPROCESSOR_NULL_FILE_POINTER;
     return;
   }
   fseek(state->file, 0, SEEK_END);
   state->filesize = ftell(state->file);
   rewind(state->file);
-  if (state->filesize < 0)
-  {
+  if (state->filesize < 0) {
     state->error = PREPROCESSOR_CANNOT_READ_FILESIZE;
     return;
   }
 }
 
-static inline void syPreprocessorInitOutput(syPreprocessingState *state)
-{
+static inline void syPreprocessorInitOutput(syPreprocessingState *state) {
   size_t initSize = 1024;
   state->outputBuf = (char *)calloc(initSize, sizeof(char));
   state->outputLen = initSize;
@@ -98,14 +83,11 @@ static inline void syPreprocessorInitOutput(syPreprocessingState *state)
 }
 
 static inline void syPreprocessorSetWorkingDir(char *filepath,
-                                               syPreprocessingState *state)
-{
+                                               syPreprocessingState *state) {
   size_t pos = 0, i = 0;
   char c = filepath[i];
-  while (c != '\0')
-  {
-    if (c == '/' || c == '\\')
-    {
+  while (c != '\0') {
+    if (c == '/' || c == '\\') {
       pos = i;
     }
     i++;
@@ -115,66 +97,58 @@ static inline void syPreprocessorSetWorkingDir(char *filepath,
   memcpy(state->workingDir, filepath, pos + 1);
 }
 
-static inline void syPreprocessInsertToken(char c, syPreprocessingState *state)
-{
+static inline void syPreprocessInsertToken(char c,
+                                           syPreprocessingState *state) {
   state->outputBuf[state->outputIndex] = c;
   state->outputIndex++;
-  if (state->outputIndex + 1 >= state->outputLen)
-  {
+  if (state->outputIndex + 1 >= state->outputLen) {
     state->outputBuf = realloc(state->outputBuf, state->outputLen * 2);
     state->outputLen *= 2;
   }
 }
 
-static inline void syPreprocessDeleteToken(syPreprocessingState *state)
-{
+static inline void syPreprocessDeleteToken(syPreprocessingState *state) {
   state->outputBuf[state->outputIndex - 1] = '\0';
   state->outputIndex--;
 }
 
-static inline void syPreprocessParseComment(syPreprocessingState *state)
-{
+static inline void syPreprocessParseComment(syPreprocessingState *state) {
   char cur = getc(state->file);
-  while (cur != '\n')
-  {
+  while (cur != '\n') {
     cur = getc(state->file);
   }
   syPreprocessDeleteToken(state);
 }
 
 static inline void syPreprocessEmbedInclude(char *includePath,
-                                            syPreprocessingState *state)
-{
+                                            syPreprocessingState *state) {
   char resolvedPath[2048] = {0};
   snprintf(resolvedPath, 2048, "%s%s", state->workingDir, includePath);
   FILE *fp = fopen(resolvedPath, "rb");
-  if (!fp)
-  {
+  if (!fp) {
     state->error = PREPROCESSOR_CANNOT_OPEN_INCLUDE_FILE;
     return;
   }
   char c = getc(fp);
-  while (c != EOF)
-  {
+  while (c != EOF) {
     syPreprocessInsertToken(c, state);
     c = getc(fp);
   }
   state->justEmbeddedInclude = 1;
 }
 
-static inline void syPreprocessParseInclude(syPreprocessingState *state)
-{
+static inline void syPreprocessParseInclude(syPreprocessingState *state) {
   char cur = getc(state->file);
 
-  while (cur != '"') // scan to first quote
+  while (cur != '"')  // scan to first quote
   {
     cur = getc(state->file);
   }
-  cur = getc(state->file); // consume quote
+  cur = getc(state->file);  // consume quote
   size_t includePathLen = 0;
-  while (cur != '"') // scan to close quote
+  while (cur != '"')  // scan to close quote
   {
-    includePathLen++; // track length between quotes
+    includePathLen++;  // track length between quotes
     cur = getc(state->file);
   }
 
@@ -183,55 +157,42 @@ static inline void syPreprocessParseInclude(syPreprocessingState *state)
   fseek(state->file, -includePathLen - 1, SEEK_CUR);
   fread(includePath, sizeof(char), includePathLen, state->file);
 
-  while (cur != '\n') // scan to end of line
+  while (cur != '\n')  // scan to end of line
   {
     cur = getc(state->file);
   }
   syPreprocessEmbedInclude(includePath, state);
-  if (state->error != PREPROCESSOR_OK)
-  {
+  if (state->error != PREPROCESSOR_OK) {
     return;
   }
 }
 
-static inline void syPreprocessParseDirective(syPreprocessingState *state)
-{
+static inline void syPreprocessParseDirective(syPreprocessingState *state) {
   char tmp[8] = {0};
   fread(tmp, sizeof(char), 7, state->file);
-  if (strcmp(tmp, INCLUDE_LITERAL) == 0)
-  {
+  if (strcmp(tmp, INCLUDE_LITERAL) == 0) {
     syPreprocessParseInclude(state);
-    if (state->error != PREPROCESSOR_OK)
-    {
+    if (state->error != PREPROCESSOR_OK) {
       return;
     }
-  }
-  else
-  {
+  } else {
     fseek(state->file, -7L, SEEK_CUR);
   }
 }
 
-static inline void syPreprocessParse(syPreprocessingState *state)
-{
+static inline void syPreprocessParse(syPreprocessingState *state) {
   char prev = '\0', cur = getc(state->file);
-  while (cur != EOF)
-  {
-    if (prev == '/' && cur == '/')
-    {
+  while (cur != EOF) {
+    if (prev == '/' && cur == '/') {
       syPreprocessParseComment(state);
       cur = getc(state->file);
-    }
-    else if (cur == '#')
-    {
+    } else if (cur == '#') {
       syPreprocessParseDirective(state);
-      if (state->error != PREPROCESSOR_OK)
-      {
+      if (state->error != PREPROCESSOR_OK) {
         return;
       }
     }
-    if (state->justEmbeddedInclude)
-    {
+    if (state->justEmbeddedInclude) {
       state->justEmbeddedInclude = 0;
       prev = cur;
       cur = getc(state->file);
@@ -243,20 +204,17 @@ static inline void syPreprocessParse(syPreprocessingState *state)
   }
 }
 
-static inline int syPreprocess(char *filepath, char **buf)
-{
+static inline int syPreprocess(char *filepath, char **buf) {
   syPreprocessingState state = {0};
 
   syPreprocessorOpenFile(filepath, &state);
-  if (state.error != PREPROCESSOR_OK)
-  {
+  if (state.error != PREPROCESSOR_OK) {
     syPreprocessorCleanup(&state);
     return state.error;
   }
 
   syPreprocessorSetFilesize(&state);
-  if (state.error != PREPROCESSOR_OK)
-  {
+  if (state.error != PREPROCESSOR_OK) {
     syPreprocessorCleanup(&state);
     return state.error;
   }
@@ -265,8 +223,7 @@ static inline int syPreprocess(char *filepath, char **buf)
 
   syPreprocessorInitOutput(&state);
   syPreprocessParse(&state);
-  if (state.error != PREPROCESSOR_OK)
-  {
+  if (state.error != PREPROCESSOR_OK) {
     syPreprocessorCleanup(&state);
     return state.error;
   }

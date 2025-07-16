@@ -8,11 +8,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#include <soya/app.h>
-#include <soya/defaults.h>
-#include <soya/callbacks.h>
-#include <soya/renderer.h>
-
+#include <soya/core/core.h>
 #include <soya/glad/glad.h>
 
 #include <GLFW/glfw3.h>  // GLFW must always be imported last
@@ -22,11 +18,11 @@ void setup(syApp *app);
 void loop(syApp *app);
 
 #ifdef SOYA_NO_SETUP
-static inline const void setup(syApp *app) { (void)app; }
+const void setup(syApp *app) { (void)app; }
 #endif
 
 #ifdef SY_NO_CONFIGURE
-static inline const void configure(syApp *app) { (void)app; }
+const void configure(syApp *app) { (void)app; }
 #endif
 
 static inline bool syMainPostConfigure(syApp *app) {

@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 
-#include <soya/app.h>
+#include <soya/core/app.h>
 
 #include <soya/glad/glad.h>
 

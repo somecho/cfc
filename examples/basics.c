@@ -46,6 +46,6 @@ void setup(syApp *app) {
 // Finally, we have the `loop` function. It is run every frame.
 //
 void loop(syApp *app) {
-  syClear(SY_BLUE.r, SY_BLUE.g, SY_BLUE.b, 1.);
+  syClear(SY_BLUE);
   printf("Frame number: %zu @ %.1f fps\n", app->frameNum, app->fps);
 }

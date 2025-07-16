@@ -13,10 +13,10 @@
  * ```
  *
  * */
-#define syVec(type) \
-  struct {          \
-    usize len, cap; \
-    type *data;     \
+#define syVec(type)  \
+  struct {           \
+    size_t len, cap; \
+    type *data;      \
   }
 
 /**

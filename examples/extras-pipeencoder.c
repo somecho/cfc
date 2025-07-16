@@ -34,7 +34,7 @@ void setup(syApp *app) {
 }
 
 void loop(syApp *app) {
-  syApplyRgba(syClear, SY_RED);
+  syClear(SY_RED);
   syTranslate(app, app->width / 2., app->height / 2., 0);
   float r = (sinf(app->frameNum / 120.0) * 0.5 + 0.5) * 250 + 100;
   syDrawPolygon(app, 0, 0, 0, r, 72);
