@@ -58,7 +58,7 @@ set(SOYA_EXAMPLES
   basic-drawing
   fragment-shader
   framebuffer
-  data-structures
+  vectors
   particles
 )
 

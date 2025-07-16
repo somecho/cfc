@@ -23,12 +23,7 @@
 // DEFAULTS
 //
 
-#define SY_DEFAULT_GL_VERSION_MAJOR 4
-#define SY_DEFAULT_GL_VERSION_MINOR 3
-#define SY_DEFAULT_WINDOW_WIDTH 1280
-#define SY_DEFAULT_WINDOW_HEIGHT 720
-#define SY_DEFAULT_WINDOW_SAMPLES 8
-
+#include <soya/defaults.h>
 #include <soya/color.h>
 #include <soya/types.h>
 #include <soya/math.h>
@@ -158,56 +153,7 @@ static inline void syVertexAttribute4f(GLuint index);
 // ARRAY
 //
 
-#define SY_DEFARRAY(name, type) \
-  struct {                      \
-    usize len, cap;             \
-    type *data;                 \
-  } name;
-
-#define syArrayInit(arr, type) \
-  (arr).len = 0;               \
-  (arr).cap = 4;               \
-  (arr).data = (type *)calloc((arr).cap, sizeof(float))
-
-#define syArrayPrint(arr)                                                \
-  printf("Length: %zu\n", arr.len);                                      \
-  printf("Capacity: %zu\n", arr.cap);                                    \
-  printf("Data: ");                                                      \
-  for (usize i = 0; i < arr.len; i++) {                                  \
-    const char *fmt = _Generic((arr.data[i]), float: "%f ", u32: "%u "); \
-    printf(fmt, arr.data[i]);                                            \
-  }                                                                      \
-  printf("\n");
-
-#define syArrayDestroy(arr) \
-  free(arr.data);           \
-  arr.data = NULL;
-
-#define syArrayPush(arr, val)                                                \
-  if ((arr).len + 1 >= (arr).cap) {                                          \
-    (arr).data = realloc((arr).data, (arr).cap * 2 * sizeof((arr).data[0])); \
-    (arr).cap *= 2;                                                          \
-  }                                                                          \
-  (arr).data[(arr).len] = (val);                                             \
-  (arr).len++;
-
-#define syArrayPush3(arr, v1, v2, v3) \
-  syArrayPush((arr), (v1));           \
-  syArrayPush((arr), (v2));           \
-  syArrayPush((arr), (v3));
-
-#define syArrayPush4(arr, v1, v2, v3, v4) \
-  syArrayPush3((arr), (v1), (v2), (v3));  \
-  syArrayPush((arr), (v4));
-
-#define syArrayPushVec3(arr, vec3) \
-  syArrayPush3((arr), (vec3).x, (vec3).y, (vec3).z);
-
-#define syArrayPush2Vec3(arr, vec3A, vec3B) \
-  syArrayPushVec3(arr, vec3A);              \
-  syArrayPushVec3(arr, vec3B);
-
-#define syArraySizeb(arr) arr.len == 0 ? 0 : sizeof(arr.data[0]) * arr.len
+#include <soya/vec.h>
 
 ////////////////////////////////////////////////////////////
 //

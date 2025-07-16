@@ -13,6 +13,7 @@
 | Function-like macros should be camelCase                      | `#define syColorOpaque(c) syWithAlpha((c), 1.)` |
 | Functions should be camelCase                                 | `void syClear()`                                |
 | Functions, Macros and Structs should have the `sy` prefix[^1] |                                                 |
+| Type functions | syArray syArrayPush |
 
 
 [^1]: Except for the user defined functions `configure`, `setup` and `loop`
