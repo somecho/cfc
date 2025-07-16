@@ -11,7 +11,7 @@
 #include <soya/core/core.h>
 #include <soya/glad/glad.h>
 
-#include <GLFW/glfw3.h>  // GLFW must always be imported last
+#include <GLFW/glfw3.h>
 
 void configure(syApp *app);
 void setup(syApp *app);

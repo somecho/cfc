@@ -1,5 +1,5 @@
-#ifndef SOYA_MATH_H
-#define SOYA_MATH_H
+#ifndef _SOYA_MATH_H
+#define _SOYA_MATH_H
 
 #include <stdlib.h>
 
@@ -29,4 +29,4 @@ static inline float syRandfRange(float lo, float hi) {
   return syMapRange(syRandf(), 0, 1, lo, hi);
 }
 
-#endif  // SOYAMATH_H_
+#endif  // _SOYA_MATH_H

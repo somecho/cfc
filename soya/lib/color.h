@@ -1,5 +1,5 @@
-#ifndef SOYA_COLOR_H
-#define SOYA_COLOR_H
+#ifndef _SOYA_COLOR_H
+#define _SOYA_COLOR_H
 
 typedef struct syColor {
   union {
@@ -23,4 +23,4 @@ typedef struct syColor {
 #define SY_WHITE (syColor){1, 1, 1, 1}
 #define SY_YELLOW (syColor){1, 1, 0, 1}
 
-#endif
+#endif  // _SOYA_COLOR_H

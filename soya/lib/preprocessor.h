@@ -1,10 +1,10 @@
+#ifndef _SOYA_PREPROCESSOR_H
+#define _SOYA_PREPROCESSOR_H
+
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
-#ifndef SOYA_PREPROCESSOR_H_
-#define SOYA_PREPROCESSOR_H_
 
 /**
  * A simple preprocessor similar to what C/C++ compilers do. It replaces
@@ -233,4 +233,4 @@ static inline int syPreprocess(char *filepath, char **buf) {
   return state.error;
 }
 
-#endif
+#endif  // _SOYA_PREPROCESSOR_H

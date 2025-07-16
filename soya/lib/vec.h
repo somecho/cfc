@@ -1,5 +1,5 @@
-#ifndef SOYA_VEC_H
-#define SOYA_VEC_H
+#ifndef _SOYA_VEC_H
+#define _SOYA_VEC_H
 
 /**
  *
@@ -124,4 +124,4 @@
  * */
 #define syVecSizeb(v) (v).len == 0 ? 0 : sizeof(v.data[0]) * (v).len
 
-#endif  // SOYA_VEC_H
+#endif  // _SOYA_VEC_H
