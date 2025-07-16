@@ -5,7 +5,7 @@
 // it.
 //
 
-#include <soya/soyalib.h>
+#include <soya/soya.h>
 
 syShader shader;
 

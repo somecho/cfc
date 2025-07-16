@@ -8,28 +8,25 @@
 
 #define SY_NO_CONFIGURE
 
-#include <soya/soyalib.h>
+#include <soya/soya.h>
 
 //
 // This macro declares an array struct. It takes a name and a type.
 //
 SY_DEFARRAY(macroarray,
-            float) // Declare an array named `macroarray` of type `float`.
+            float)  // Declare an array named `macroarray` of type `float`.
 
-void setup(syApp *app)
-{
+void setup(syApp *app) {
   (void)app;
   // Arrays need to be initialized before usage
   syArrayInit(macroarray, float);
 }
 
-void loop(syApp *app)
-{
+void loop(syApp *app) {
   // Push a value into the array every frame
   syArrayPush(macroarray, app->frameNum);
 
-  if (app->frameNum == 12)
-  {
+  if (app->frameNum == 12) {
     // Helper function to view array data
     syArrayPrint(macroarray);
 

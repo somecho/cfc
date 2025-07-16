@@ -2,8 +2,8 @@
 // SOYALIB
 //
 
-#ifndef SOYA_LIB_H
-#define SOYA_LIB_H
+#ifndef SOYA_H
+#define SOYA_H
 
 #include <assert.h>
 #include <stdint.h>
@@ -29,15 +29,9 @@
 #define SY_DEFAULT_WINDOW_HEIGHT 720
 #define SY_DEFAULT_WINDOW_SAMPLES 8
 
-#include "soyacolor.h"
-#include "soyasugar.h"
-
-////////////////////////////////////////////////////////////
-//
-// TYPE ALIASES
-//
-
-#include "soyatypedefs.h"
+#include <soya/color.h>
+#include <soya/types.h>
+#include <soya/math.h>
 
 ////////////////////////////////////////////////////////////
 //
@@ -238,13 +232,6 @@ static inline void syFboDraw(syApp *app, syFbo *fbo);
 //
 
 static inline const char *syReadFile(const char *filePath);
-
-////////////////////////////////////////////////////////////
-//
-// Random
-//
-
-#include "soyamath.h"
 
 ////////////////////////////////////////////////////////////
 //

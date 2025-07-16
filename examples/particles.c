@@ -4,7 +4,7 @@
 // Simple particle system in a perlin noise flow field.
 //
 
-#include <soya/soyalib.h>
+#include <soya/soya.h>
 
 #define NUM_PARTICLES 50000  // you may need -O3 to run at high fps
 

@@ -1,24 +1,14 @@
 #define SOYA_NO_MAIN
 
-#ifdef USE_CMAKE_SOYA
-
-#include <soya/extras/preprocessor.h>
-#include <soya/soyalib.h>
-static const char *RESOURCE_DIR = SOYA_TEST_RESOURCES;
-
-#else
-
-#include "../soya/extras/preprocessor.h"
-#include "../soya/soyalib.h"
-static const char *RESOURCE_DIR = "resources";
-
-#endif
-
 #include <assert.h>
 
-int main()
-{
-  { // Pass Through
+#include <soya/extras/preprocessor.h>
+#include <soya/soya.h>
+
+static const char *RESOURCE_DIR = SOYA_TEST_RESOURCES;
+
+int main() {
+  {  // Pass Through
     char *buf = NULL;
     char path[1024] = {0};
     snprintf(path, 1024, "%s%s", RESOURCE_DIR, "/basic.frag");
@@ -29,7 +19,7 @@ int main()
     free(buf);
     free((void *)expected);
   }
-  { // Comment
+  {  // Comment
     char *buf = NULL;
     char path[1024] = {0};
     snprintf(path, 1024, "%s%s", RESOURCE_DIR, "/basic.frag");
@@ -41,7 +31,7 @@ int main()
     free(buf);
     free((void *)expected);
   }
-  { // Single Include
+  {  // Single Include
     char *buf = NULL;
     char path[1024] = {0};
     snprintf(path, 1024, "%s%s", RESOURCE_DIR, "/hash.glsl");
@@ -53,7 +43,7 @@ int main()
     free(buf);
     free((void *)expected);
   }
-  { // Commented include
+  {  // Commented include
     char *buf = NULL;
     char path[1024] = {0};
     snprintf(path, 1024, "%s%s", RESOURCE_DIR, "/commentedInclude.glsl");

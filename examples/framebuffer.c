@@ -7,7 +7,7 @@
 
 #define SY_NO_CONFIGURE
 
-#include <soya/soyalib.h>
+#include <soya/soya.h>
 
 syFbo fbo;
 
@@ -26,7 +26,7 @@ void loop(syApp *app) {
   syFboBegin(&fbo);  // Begin drawing to the FBO
 
   syApplyRgba(syClear, SY_CYAN);
-  sySetColor(app, SY_FLAT(SY_MAGENTA));
+  sySetColor(app, SY_MAGENTA.r, SY_MAGENTA.g, SY_MAGENTA.a, SY_MAGENTA.b);
 
   i32 numPts = 80;
   SY_DEFARRAY(pts, f32);

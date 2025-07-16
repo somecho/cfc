@@ -12,7 +12,7 @@
 #define SY_NO_CONFIGURE
 
 #include <soya/extras/pipeencoder.h>
-#include <soya/soyalib.h>
+#include <soya/soya.h>
 
 syPipeEncoder encoder;
 

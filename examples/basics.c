@@ -1,10 +1,10 @@
 //
-// Example: 01-basics.c
+// Example: basics.c
 // Description:
 // This example shows how to use Soya to create a window.
 //
 
-#include <soya/soyalib.h>
+#include <soya/soya.h>
 
 //
 // To begin using Soya, there are 3 functions you have to implement. All 3
@@ -46,6 +46,6 @@ void setup(syApp *app) {
 // Finally, we have the `loop` function. It is run every frame.
 //
 void loop(syApp *app) {
-  syClear(SY_FLAT(SY_BLUE));
+  syClear(SY_BLUE.r, SY_BLUE.g, SY_BLUE.b, 1.);
   printf("Frame number: %zu @ %.1f fps\n", app->frameNum, app->fps);
 }

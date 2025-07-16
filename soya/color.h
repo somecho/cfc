@@ -1,8 +1,8 @@
 #ifndef SOYA_COLOR_H
 #define SOYA_COLOR_H
 
-#include "soyatypedefs.h"
-#include "soyamath.h"
+#include <soya/types.h>
+#include <soya/math.h>
 
 #define SY_BLACK (syRgba){0, 0, 0, 1}
 #define SY_BLUE (syRgba){0, 0, 1, 1}

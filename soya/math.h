@@ -1,7 +1,7 @@
 #ifndef SOYA_MATH_H
 #define SOYA_MATH_H
 
-#include "soyatypedefs.h"
+#include <soya/types.h>
 
 // Maps `i` which ranges from `a` - `b` to a range from `c` - `d`
 //
