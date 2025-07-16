@@ -18,15 +18,11 @@
 #include "glad/glad.h"
 #include <GLFW/glfw3.h>
 
-////////////////////////////////////////////////////////////
-//
-// DEFAULTS
-//
-
 #include <soya/defaults.h>
 #include <soya/color.h>
 #include <soya/types.h>
 #include <soya/math.h>
+#include <soya/vec.h>
 
 ////////////////////////////////////////////////////////////
 //
@@ -150,13 +146,6 @@ static inline void syVertexAttribute4f(GLuint index);
 
 ////////////////////////////////////////////////////////////
 //
-// ARRAY
-//
-
-#include <soya/vec.h>
-
-////////////////////////////////////////////////////////////
-//
 // syFbo
 //
 
@@ -212,7 +201,6 @@ typedef struct syRenderer {
   syShader shader;
   syShader defaultShader;
   mat4s modelMatrix, viewMatrix, projectionMatrix;
-  /* mat4s modelViewProjectionMatrix; */
   float color[4];
 } syRenderer;
 
