@@ -13,17 +13,17 @@
 
 #include <GLFW/glfw3.h>
 
-void configure(syApp *app);
 void setup(syApp *app);
-void loop(syApp *app);
-
 #ifdef SOYA_NO_SETUP
 const void setup(syApp *app) { (void)app; }
 #endif
 
-#ifdef SY_NO_CONFIGURE
+void configure(syApp *app);
+#ifdef SOYA_NO_CONFIGURE
 const void configure(syApp *app) { (void)app; }
 #endif
+
+void loop(syApp *app);
 
 static inline bool syMainPostConfigure(syApp *app) {
   printf("GL Version: %i.%i\n", app->glVersionMajor, app->glVersionMinor);
