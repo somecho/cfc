@@ -1,25 +1,27 @@
-/**
- *
- * Example: vectors.c
- *
- * This example shows how to use syVec, a simple dynamic array structure.
- *
- **/
+#include <soya/lib/vec.h>
 
-#define SY_NO_CONFIGURE
-#include <soya/soya.h>
+/*
+This example prints:
+Length: 10
+Capacity: 16
+1.500000 2.500000 2.600000 2.700000 0.000000 0.000000
+0.000000 1.000000 2.000000 3.000000
+*/
+int main() {
+  syVec(float) center;
+  syVecInit(center, float);
+  syVecPush3(center, 0., 0., 0.);
 
-syVec(float) nums;  // 1. Declaring
+  syVec(float) nums;
+  syVecInit(nums, float);
 
-void setup(syApp *app) {
-  syVecInit(nums, float);  // 2. Initializing
-}
+  float normal[3] = {1, 2, 3};
 
-void loop(syApp *app) {
-  syVecPush(nums, app->frameNum);  // 3. Inserting elements
-  if (app->frameNum == 12) {
-    syVecDBG("%f ", nums);
-    syVecDestroy(nums);  // 4. Cleaning up
-    glfwSetWindowShouldClose(app->window, true);
-  }
+  syVecPush(nums, 1.5);
+  syVecPush3(nums, 2.5, 2.6, 2.7);
+  syVecPushVec(nums, center);
+  syVecPushArr(nums, normal, 3);
+  syVecDBG("%f ", nums);
+  syVecDestroy(center);
+  syVecDestroy(nums);
 }

@@ -5,7 +5,7 @@
 // to use the `syFbo` struct.
 //
 
-#define SY_NO_CONFIGURE
+#define SOYA_NO_CONFIGURE
 
 #include <soya/soya.h>
 

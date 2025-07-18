@@ -1,9 +1,14 @@
+/**
+ * @file graphics.h
+ * */
+
 #ifndef _SOYA_GRAPHICS_H_
 #define _SOYA_GRAPHICS_H_
 
 #include <soya/lib/color.h>
 #include <soya/core/fbo.h>
 #include <soya/core/app.h>
+#include <soya/glad/glad.h>
 
 static inline void syWriteBuffer(GLenum target, GLuint buffer, GLsizeiptr size,
                                  const void *data, GLenum usage) {
@@ -98,6 +103,10 @@ static inline void syDrawIndexed(syApp *app, float *vertices, float *colors,
   syVertexAttribute4f(1);
 }
 
+/**@{*/
+/**
+ * @brief draws a triangle
+ */
 static inline void syDrawTriangle(syApp *app, float x1, float y1, float z1,
                                   float x2, float y2, float z2, float x3,
                                   float y3, float z3) {
@@ -105,13 +114,20 @@ static inline void syDrawTriangle(syApp *app, float x1, float y1, float z1,
   syDrawUnindexed(app, vertices, NULL, 3, GL_TRIANGLES);
 }
 
+/**
+ * @brief Draws a quad
+ * */
 static inline void syDrawQuad(syApp *app, float x, float y, float width,
                               float height) {
   float vertices[] = {x,         y,          0, x + width, y,          0,
                       x + width, y + height, 0, x,         y + height, 0};
   syDrawUnindexed(app, vertices, NULL, 4, GL_TRIANGLE_FAN);
 }
+/**@}*/
 
+/**
+ * @brief Draws a line
+ * */
 static inline void syDrawLine(syApp *app, float x1, float y1, float z1,
                               float x2, float y2, float z2) {
   float vertices[] = {x1, y1, z1, x2, y2, z2};

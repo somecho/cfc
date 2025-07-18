@@ -1,3 +1,6 @@
+/**
+ * @file color.h
+ * */
 #ifndef _SOYA_COLOR_H
 #define _SOYA_COLOR_H
 

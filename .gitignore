@@ -5,6 +5,7 @@ tmp/
 **/*.pch
 
 
+docs/
 bin/
 .cache/
 build/

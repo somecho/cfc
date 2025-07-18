@@ -43,7 +43,6 @@ typedef struct syApp {
 
   void (*onKeyPressed)(int key);
 
-  /* void (*onMousePressed)(syApp *app, int button, double x, double y); */
   void (*onMousePressed)(int button, double x, double y);
 } syApp;
 
