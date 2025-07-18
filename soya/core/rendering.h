@@ -1,63 +1,17 @@
 /**
- * @file graphics.h
+ * @file rendering.h
  * */
 
-#ifndef _SOYA_GRAPHICS_H_
-#define _SOYA_GRAPHICS_H_
+#ifndef _SOYA_RENDERING_H
+#define _SOYA_RENDERING_H
 
 #include <soya/lib/color.h>
+#include <soya/lib/gl.h>
 #include <soya/core/fbo.h>
 #include <soya/core/app.h>
 #include <soya/glad/glad.h>
 
-static inline void syWriteBuffer(GLenum target, GLuint buffer, GLsizeiptr size,
-                                 const void *data, GLenum usage) {
-  glBindBuffer(target, buffer);
-  glBufferData(target, size, data, usage);
-}
-
-static inline void syWriteArrayBuffer(GLuint buffer, size_t size, void *data) {
-  syWriteBuffer(GL_ARRAY_BUFFER, buffer, size, data, GL_DYNAMIC_DRAW);
-}
-
-static inline void syVertexAttribute(GLuint index, GLint size, GLenum type,
-                                     GLboolean normalized, GLsizei stride,
-                                     const void *pointer) {
-  glVertexAttribPointer(index, size, type, normalized, stride, pointer);
-  glEnableVertexAttribArray(index);
-}
-
-static inline void syVertexAttribute2f(GLuint index) {
-  syVertexAttribute(index, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), NULL);
-}
-
-static inline void syVertexAttribute3f(GLuint index) {
-  syVertexAttribute(index, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), NULL);
-}
-
-static inline void syVertexAttribute4f(GLuint index) {
-  syVertexAttribute(index, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), NULL);
-}
-
-static inline void syBeginShader(syApp *app, syShader shader) {
-  glUseProgram(shader);
-  app->renderer.shader = shader;
-}
-
-static inline void syEndShader(syApp *app) {
-  glUseProgram(app->renderer.defaultShader);
-  app->renderer.shader = app->renderer.defaultShader;
-}
-
-static inline void syClear(syColor col) {
-  glClearColor(col.r, col.g, col.b, col.a);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-}
-
-static inline void sySetColor(syApp *app, syColor col) {
-  memcpy(app->renderer.color, (float *)&col, sizeof(float) * 4);
-}
-
+/**@{*/
 static inline void syDrawUnindexed(syApp *app, float *vertices, float *colors,
                                    size_t n, GLenum mode) {
   glBindVertexArray(app->renderer.vao);
@@ -103,9 +57,8 @@ static inline void syDrawIndexed(syApp *app, float *vertices, float *colors,
   syVertexAttribute4f(1);
 }
 
-/**@{*/
 /**
- * @brief draws a triangle
+ * Draws a triangle
  */
 static inline void syDrawTriangle(syApp *app, float x1, float y1, float z1,
                                   float x2, float y2, float z2, float x3,
@@ -115,7 +68,7 @@ static inline void syDrawTriangle(syApp *app, float x1, float y1, float z1,
 }
 
 /**
- * @brief Draws a quad
+ * Draws a quad
  * */
 static inline void syDrawQuad(syApp *app, float x, float y, float width,
                               float height) {
@@ -123,10 +76,9 @@ static inline void syDrawQuad(syApp *app, float x, float y, float width,
                       x + width, y + height, 0, x,         y + height, 0};
   syDrawUnindexed(app, vertices, NULL, 4, GL_TRIANGLE_FAN);
 }
-/**@}*/
 
 /**
- * @brief Draws a line
+ * Draws a line
  * */
 static inline void syDrawLine(syApp *app, float x1, float y1, float z1,
                               float x2, float y2, float z2) {
@@ -165,6 +117,18 @@ static inline void syDrawPolygon(syApp *app, float x, float y, float z,
   free((void *)vertices);
 }
 
+/**@}*/
+
+/**@{ */
+static inline void syClear(syColor col) {
+  glClearColor(col.r, col.g, col.b, col.a);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+static inline void sySetColor(syApp *app, syColor col) {
+  memcpy(app->renderer.color, (float *)&col, sizeof(float) * 4);
+}
+
 static inline void syTranslate(syApp *app, float x, float y, float z) {
   app->renderer.modelMatrix =
       glms_translate(app->renderer.modelMatrix, (vec3s){{x, y, z}});
@@ -179,7 +143,21 @@ static inline void syRotate(syApp *app, float angle, float x, float y,
 static inline void syResetTransformations(syApp *app) {
   app->renderer.modelMatrix = glms_mat4_identity();
 }
+/**@}*/
 
+/**@{ */
+static inline void syBeginShader(syApp *app, syShader shader) {
+  glUseProgram(shader);
+  app->renderer.shader = shader;
+}
+
+static inline void syEndShader(syApp *app) {
+  glUseProgram(app->renderer.defaultShader);
+  app->renderer.shader = app->renderer.defaultShader;
+}
+/**@}*/
+
+/**@{*/
 static inline void syFboBegin(syFbo *fbo) {
   glBindFramebuffer(GL_FRAMEBUFFER, fbo->framebuffer);
 }
@@ -193,5 +171,6 @@ static inline void syFboDraw(syApp *app, syFbo *fbo) {
   syDrawQuad(app, 0, 0, app->width, app->height);
   syEndShader(app);
 }
+/**@}*/
 
-#endif  // _SOYA_GRAPHICS_H_
+#endif  // _SOYA_RENDERING_H

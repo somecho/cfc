@@ -1,8 +1,8 @@
 /**
  * @file vec.h
  *
- * @brief `vec.h` contains a collection of macros to make working with
- * dynamically-sized generically-typed containers in C easier.
+ * @brief A collection of macros to make working with dynamically-sized
+ * generically-typed containers in C easier.
  *
  * Basic usage involves declaring and initializing a vector with @ref syVec and
  * @ref syVecInit respectively. Multiple macros are provided for pushing
@@ -28,6 +28,7 @@
 /**
  * Declares a vector-type struct.
  * @param type The type of the elements this vector will contain
+ * @since 0.1.0
  * */
 #define syVec(type)  \
   struct {           \
@@ -41,6 +42,7 @@
  * @param v Uninitialized vector defined with @ref syVec
  * @param type The type of the elements this vector contains
  * @sa syVecDestroy
+ * @since 0.1.0
  * */
 #define syVecInit(v, t)                         \
   do {                                          \
@@ -53,6 +55,7 @@
  * Frees the pointer that the vector holds pointing to raw data. Becareful when
  * storing pointers in vectors. They must be freed before this macro is called
  * or they will dangle and leak memory.
+ * @since 0.1.0
  * */
 #define syVecDestroy(v) \
   do {                  \
@@ -65,6 +68,7 @@
  * same type.
  * @param v The vector into which elements will be pushed
  * @param val The element to be pushed into the vector
+ * @since 0.1.0
  * */
 #define syVecPush(v, val)                                              \
   do {                                                                 \
@@ -82,6 +86,7 @@
  * @param v The vector into which elements will be pushed
  * @param v1 The first element to be pushed into the vector
  * @param v2 The second element to be pushed into the vector
+ * @since 0.1.0
  * */
 #define syVecPush2(v, v1, v2) \
   do {                        \
@@ -96,6 +101,7 @@
  * @param v1 The first element to be pushed into the vector
  * @param v2 The second element to be pushed into the vector
  * @param v3 The third element to be pushed into the vector
+ * @since 0.1.0
  * */
 #define syVecPush3(v, v1, v2, v3) \
   syVecPush2((v), (v1), (v2));    \
@@ -109,6 +115,7 @@
  * @param v2 The second element to be pushed into the vector
  * @param v3 The third element to be pushed into the vector
  * @param v4 The fourth element to be pushed into the vector
+ * @since 0.1.0
  * */
 #define syVecPush4(v, v1, v2, v3, v4) \
   syVecPush3((v), (v1), (v2), (v3));  \
@@ -119,6 +126,7 @@
  * Both vectors must have the same type.
  * @param v The vector into which elements will be pushed
  * @param w The other vector from which elements are pushed
+ * @since 0.1.0
  * */
 #define syVecPushVec(v, w)                 \
   do {                                     \
@@ -133,6 +141,7 @@
  * @param v The vector into which elements will be pushed
  * @param arr The array from which elements are pushed
  * @param len The number of elements in `arr`
+ * @since 0.1.0
  * */
 #define syVecPushArr(v, arr, len)        \
   do {                                   \
@@ -146,6 +155,7 @@
  * the format string provided.
  * @param fmt The format string to print each element with
  * @param v Vector defined with @ref syVec
+ * @since 0.1.0
  * */
 #define syVecDBG(fmt, v)                   \
   do {                                     \
@@ -160,6 +170,7 @@
 /**
  * @param v Vector defined with @ref syVec
  * @returns total size bytes of all elements in vec
+ * @since 0.1.0
  * */
 #define syVecSizeb(v) (v).len == 0 ? 0 : sizeof(v.data[0]) * (v).len
 

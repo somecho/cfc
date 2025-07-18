@@ -1,3 +1,6 @@
+/**
+ * @file shader.h
+ * */
 #ifndef _SOYA_SHADER_H
 #define _SOYA_SHADER_H
 
