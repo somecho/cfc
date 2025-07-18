@@ -8,6 +8,7 @@ if(${SOYA_EXAMPLES})
     framebuffer
     vectors
     particles
+    sysl
   )
 
   if(NOT WIN32)
