@@ -174,4 +174,6 @@
  * */
 #define syVecSizeb(v) (v).len == 0 ? 0 : sizeof(v.data[0]) * (v).len
 
+#define SY_VEC_FOREACH(v, i) for (size_t i = 0; i < (v).len; i++)
+
 #endif  // _SOYA_VEC_H

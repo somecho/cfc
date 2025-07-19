@@ -117,6 +117,23 @@ static inline void syDrawPolygon(syApp *app, float x, float y, float z,
   free((void *)vertices);
 }
 
+typedef enum { SY_VERTICAL, SY_HORIZONTAL } syOrientation;
+
+void syDrawGradientRect(syApp *app, float x, float y, float w, float h,
+                        syColor c1, syColor c2, syOrientation o) {
+  float vertices[3 * 4] = {x, y, 0, x + w, y, 0, x + w, y + h, 0, x, y + h, 0};
+  syColor colors[4] = {c1, c1, c2, c2};
+  switch (o) {
+    case SY_VERTICAL:
+      break;
+    case SY_HORIZONTAL:
+      colors[1] = c2;
+      colors[3] = c1;
+      break;
+  }
+  syDrawUnindexed(app, vertices, (float *)colors, 4, GL_TRIANGLE_FAN);
+}
+
 /**@}*/
 
 /**@{ */

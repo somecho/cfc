@@ -60,4 +60,11 @@ static inline syColor syRgbToHsv(syColor hsv) {
   return (syColor){rgb[0] + m, rgb[1] + m, rgb[2] + m, hsv.a};
 }
 
+/**
+ * @c color in HSV or RGB
+ * */
+static inline syColor syWithAlpha(const syColor *const c, float a) {
+  return syRgb(c->r, c->g, c->b, a);
+}
+
 #endif  // _SOYA_COLOR_H

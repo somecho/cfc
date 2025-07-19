@@ -52,6 +52,10 @@
  * */
 #define SYSL_OUT_VEC4(identifier) SYSL_OUT(vec4, identifier)
 
+#define SYSL_IN(type, identifier) "in " #type " " #identifier SYSL_DELIM
+
+#define SYSL_IN_VEC4(identifier) SYSL_IN(vec4, identifier)
+
 /**
  * @brief Expands to `"layout (location = loc) statement"`
  *
@@ -78,6 +82,10 @@
  * ```
  * */
 #define SYSL_MAIN(s) "void main(){" #s "}"
+
+#define SYSL_FN(fn) #fn
+
+#define SYSL_PREAMBLE(...) __VA_ARGS__
 
 #define SYSL(...) __VA_ARGS__
 
