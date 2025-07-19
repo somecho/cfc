@@ -89,8 +89,32 @@ static inline void syShaderUniform2f(GLuint shader, const char *uniformName,
   glUniform2f(u, f1, f2);
 }
 
+static inline void syShaderUniform3f(GLuint shader, const char *uniformName,
+                                     float f1, float f2, float f3) {
+  GLint u = glGetUniformLocation(shader, uniformName);
+  glUniform3f(u, f1, f2, f3);
+}
+
+static inline void syShaderUniform4f(GLuint shader, const char *uniformName,
+                                     float f1, float f2, float f3, float f4) {
+  GLint u = glGetUniformLocation(shader, uniformName);
+  glUniform4f(u, f1, f2, f3, f4);
+}
+
+static inline void syShaderUniform3fv(GLuint shader, const char *uniformName,
+                                      const float *const f) {
+  GLint u = glGetUniformLocation(shader, uniformName);
+  glUniform3fv(u, 1, f);
+}
+
+static inline void syShaderUniform4fv(GLuint shader, const char *uniformName,
+                                      const float *const f) {
+  GLint u = glGetUniformLocation(shader, uniformName);
+  glUniform4fv(u, 1, f);
+}
+
 static inline void syShaderUniformMat4fv(GLuint shader, const char *uniformName,
-                                         const float *value) {
+                                         const float *const value) {
   GLint u = glGetUniformLocation(shader, uniformName);
   glUniformMatrix4fv(u, 1, GL_FALSE, value);
 }
