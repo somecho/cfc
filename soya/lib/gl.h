@@ -16,7 +16,8 @@ static inline void syWriteBuffer(GLenum target, GLuint buffer, GLsizeiptr size,
 }
 
 static inline void syWriteArrayBuffer(GLuint buffer, size_t size, void *data) {
-  syWriteBuffer(GL_ARRAY_BUFFER, buffer, size, data, GL_DYNAMIC_DRAW);
+  syWriteBuffer(GL_ARRAY_BUFFER, buffer, (GLsizeiptr)size, data,
+                GL_DYNAMIC_DRAW);
 }
 
 static inline void syVertexAttribute(GLuint index, GLint size, GLenum type,

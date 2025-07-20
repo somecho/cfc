@@ -19,7 +19,7 @@ static inline const char *syReadFile(char *filePath) {
     return NULL;
   }
 
-  char *buffer = (char *)calloc(fileSize + 1, sizeof(char));
+  char *buffer = (char *)calloc((size_t)fileSize + 1, sizeof(char));
   size_t bytesRead = fread(buffer, 1, (size_t)fileSize, file);
   buffer[bytesRead] = '\0';  // Null-terminate
   fclose(file);

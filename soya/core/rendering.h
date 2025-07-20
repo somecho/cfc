@@ -13,20 +13,22 @@
 
 /**@{*/
 static inline void syDrawUnindexed(syApp *app, float *vertices, float *colors,
-                                   size_t n, GLenum mode) {
+                                   int n, GLenum mode) {
   glBindVertexArray(app->renderer.vao);
-  syWriteArrayBuffer(app->renderer.vbo, sizeof(float) * n * 3, vertices);
+  syWriteArrayBuffer(app->renderer.vbo, sizeof(float) * (size_t)n * 3,
+                     vertices);
   syVertexAttribute3f(0);
 
   if (colors == 0) {
-    float *c = calloc(n * 4, sizeof(float));
+    float *c = calloc((size_t)n * 4, sizeof(float));
     for (size_t i = 0; i < n; i++) {
       memcpy(&c[i * 4], app->renderer.color, sizeof(app->renderer.color));
     }
-    syWriteArrayBuffer(app->renderer.cbo, sizeof(float) * n * 4, c);
+    syWriteArrayBuffer(app->renderer.cbo, sizeof(float) * (size_t)n * 4, c);
     free(c);
   } else {
-    syWriteArrayBuffer(app->renderer.cbo, sizeof(float) * n * 4, colors);
+    syWriteArrayBuffer(app->renderer.cbo, sizeof(float) * (size_t)n * 4,
+                       colors);
   }
   syVertexAttribute4f(1);
 
@@ -91,21 +93,22 @@ static inline void syDrawLines(syApp *app, float *vertices, int n) {
 }
 
 static inline void syDrawPolygon(syApp *app, float x, float y, float z,
-                                 float radius, size_t numSides) {
+                                 float radius, int numSides) {
   if (numSides < 3) {
     perror("numSides must be greater than 3");
   }
-  size_t numItems = numSides + 2;  // 1 extra for the center and 1 for the end
+  size_t numItems =
+      (size_t)numSides + 2;  // 1 extra for the center and 1 for the end
   float *vertices = (float *)calloc(numItems * 3, sizeof(float));
 
   vertices[0] = x;
   vertices[1] = y;
   vertices[2] = z;
 
-  float t = GLM_PI * 2.f / (float)numSides;
+  float t = GLM_PIf * 2.f / (float)numSides;
   for (size_t i = 0; i < numSides; i++) {
-    vertices[(i + 1) * 3] = cosf(t * i) * radius + x;
-    vertices[(i + 1) * 3 + 1] = sinf(t * i) * radius + y;
+    vertices[(i + 1) * 3] = cosf(t * (float)i) * radius + x;
+    vertices[(i + 1) * 3 + 1] = sinf(t * (float)i) * radius + y;
     vertices[(i + 1) * 3 + 2] = 0;
   }
 
@@ -179,13 +182,13 @@ static inline void syFboBegin(syFbo *fbo) {
   glBindFramebuffer(GL_FRAMEBUFFER, fbo->framebuffer);
 }
 
-static inline void syFboEnd() { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
+static inline void syFboEnd(void) { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
 
 static inline void syFboDraw(syApp *app, syFbo *fbo) {
   syBeginShader(app, fbo->shader);
   syShaderUniformTexture(fbo->shader, "tex0", fbo->texture);
-  syShaderUniform2f(fbo->shader, "res", app->width, app->height);
-  syDrawQuad(app, 0, 0, app->width, app->height);
+  syShaderUniform2f(fbo->shader, "res", (float)app->width, (float)app->height);
+  syDrawQuad(app, 0, 0, (float)app->width, (float)app->height);
   syEndShader(app);
 }
 /**@}*/

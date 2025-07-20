@@ -23,7 +23,8 @@ static inline void syRendererInit(syRenderer *r, int width, int height) {
   r->color[1] = 1;
   r->color[2] = 1;
   r->color[3] = 1;
-  r->projectionMatrix = glms_ortho(0, width, 0, height, 0.1f, 100.0);
+  r->projectionMatrix =
+      glms_ortho(0, (float)width, 0, (float)height, 0.1f, 100.0);
   r->viewMatrix = glms_translate_make((vec3s){{0, 0, -1}});
   r->modelMatrix = glms_mat4_identity();
   r->shader = syShaderProgramLoadDefault();

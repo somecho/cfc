@@ -42,7 +42,7 @@ static inline syFbo syFboCreate(syFboOptions *options) {
 
   GLenum format =
       options->format == 0 ? options->internalFormat : options->format;
-  glTexImage2D(GL_TEXTURE_2D, 0, options->internalFormat, options->width,
+  glTexImage2D(GL_TEXTURE_2D, 0, (GLint)options->internalFormat, options->width,
                options->height, 0, format, options->type, 0);
 
   GLint magFilter = options->magFilter == 0 ? GL_NEAREST : options->minFilter;

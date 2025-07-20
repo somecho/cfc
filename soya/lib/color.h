@@ -31,11 +31,11 @@ typedef struct syColor {
 #define SY_YELLOW (syColor){1, 1, 0, 1}
 
 static inline syColor syRgb(float r, float g, float b, float a) {
-  return (syColor){r, g, b, a};
+  return (syColor){{r}, {g}, {b}, a};
 }
 
 static inline syColor syHsv(float h, float s, float v, float a) {
-  return (syColor){h, s, v, a};
+  return (syColor){{h}, {s}, {v}, a};
 }
 
 static inline syColor syRgbToHsv(syColor hsv) {
@@ -57,7 +57,7 @@ static inline syColor syRgbToHsv(syColor hsv) {
   } else if (300.f <= h && h < 360.f) {
     memcpy(rgb, (float[3]){c, 0, x}, sizeof(float) * 3);
   };
-  return (syColor){rgb[0] + m, rgb[1] + m, rgb[2] + m, hsv.a};
+  return (syColor){{rgb[0] + m}, {rgb[1] + m}, {rgb[2] + m}, hsv.a};
 }
 
 /**

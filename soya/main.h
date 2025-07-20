@@ -49,7 +49,7 @@ static inline bool syMainPostConfigure(syApp *app) {
 }
 
 int main() {
-  srand(time(NULL));
+  srand((unsigned)time(NULL));
   int success = -1;
 
   glfwSetErrorCallback(syOnError);
@@ -83,7 +83,7 @@ int main() {
     glfwPollEvents();
     app.frameNum++;
     app.time = glfwGetTime();
-    app.fps = 1.0 / (app.time - prevTime);
+    app.fps = 1.f / (float)(app.time - prevTime);
     prevTime = app.time;
   };
   // CLEAN UP

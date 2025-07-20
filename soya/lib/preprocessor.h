@@ -113,9 +113,9 @@ static inline void syPreprocessDeleteToken(syPreprocessingState *state) {
 }
 
 static inline void syPreprocessParseComment(syPreprocessingState *state) {
-  char cur = getc(state->file);
+  char cur = (char)getc(state->file);
   while (cur != '\n') {
-    cur = getc(state->file);
+    cur = (char)getc(state->file);
   }
   syPreprocessDeleteToken(state);
 }
@@ -129,37 +129,37 @@ static inline void syPreprocessEmbedInclude(char *includePath,
     state->error = PREPROCESSOR_CANNOT_OPEN_INCLUDE_FILE;
     return;
   }
-  char c = getc(fp);
+  char c = (char)getc(fp);
   while (c != EOF) {
     syPreprocessInsertToken(c, state);
-    c = getc(fp);
+    c = (char)getc(fp);
   }
   state->justEmbeddedInclude = 1;
 }
 
 static inline void syPreprocessParseInclude(syPreprocessingState *state) {
-  char cur = getc(state->file);
+  char cur = (char)getc(state->file);
 
   while (cur != '"')  // scan to first quote
   {
-    cur = getc(state->file);
+    cur = (char)getc(state->file);
   }
-  cur = getc(state->file);  // consume quote
+  cur = (char)getc(state->file);  // consume quote
   size_t includePathLen = 0;
   while (cur != '"')  // scan to close quote
   {
     includePathLen++;  // track length between quotes
-    cur = getc(state->file);
+    cur = (char)getc(state->file);
   }
 
   char includePath[includePathLen + 1];
   memset(includePath, 0, includePathLen + 1);
-  fseek(state->file, -includePathLen - 1, SEEK_CUR);
+  fseek(state->file, (long)(-includePathLen - 1), SEEK_CUR);
   fread(includePath, sizeof(char), includePathLen, state->file);
 
   while (cur != '\n')  // scan to end of line
   {
-    cur = getc(state->file);
+    cur = (char)getc(state->file);
   }
   syPreprocessEmbedInclude(includePath, state);
   if (state->error != PREPROCESSOR_OK) {
@@ -181,11 +181,11 @@ static inline void syPreprocessParseDirective(syPreprocessingState *state) {
 }
 
 static inline void syPreprocessParse(syPreprocessingState *state) {
-  char prev = '\0', cur = getc(state->file);
+  char prev = '\0', cur = (char)getc(state->file);
   while (cur != EOF) {
     if (prev == '/' && cur == '/') {
       syPreprocessParseComment(state);
-      cur = getc(state->file);
+      cur = (char)getc(state->file);
     } else if (cur == '#') {
       syPreprocessParseDirective(state);
       if (state->error != PREPROCESSOR_OK) {
@@ -195,12 +195,12 @@ static inline void syPreprocessParse(syPreprocessingState *state) {
     if (state->justEmbeddedInclude) {
       state->justEmbeddedInclude = 0;
       prev = cur;
-      cur = getc(state->file);
+      cur = (char)getc(state->file);
       continue;
     }
     syPreprocessInsertToken(cur, state);
     prev = cur;
-    cur = getc(state->file);
+    cur = (char)getc(state->file);
   }
 }
 

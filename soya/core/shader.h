@@ -123,8 +123,8 @@ static inline void syShaderUniformTexture(GLuint shader, const char *name,
                                           GLuint texture) {
   glActiveTexture(GL_TEXTURE0 + texture);
   glBindTexture(GL_TEXTURE_2D, texture);
-  GLuint uTex = glGetUniformLocation(shader, name);
-  glUniform1i(uTex, texture);
+  GLint uTex = glGetUniformLocation(shader, name);
+  glUniform1i(uTex, (GLint)texture);
 }
 
 #endif  // _SOYA_SHADER_H
