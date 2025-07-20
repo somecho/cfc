@@ -40,7 +40,7 @@ static inline syColor syHsv(float h, float s, float v, float a) {
   return (syColor){{h}, {s}, {v}, a};
 }
 
-/* (float& fR, float& fG, float fB, float& fH, float& fS, float& fV) */
+/** @since 0.1.0 */
 static inline syColor syRgbToHsv(syColor rgb) {
   float fCMax = fmaxf(fmaxf(rgb.r, rgb.g), rgb.b);
   float fCMin = fminf(fminf(rgb.r, rgb.g), rgb.b);
@@ -67,6 +67,7 @@ static inline syColor syRgbToHsv(syColor rgb) {
   return out;
 }
 
+/** @since 0.2.0 */
 static inline syColor syHsvToRgb(syColor hsv) {
   float fV = hsv.v;
   float fS = hsv.s;

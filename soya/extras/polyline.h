@@ -11,6 +11,7 @@
 
 /**
  * Polyline
+ * @since 0.2.0
  * */
 typedef struct syPl {
   size_t len, cap;
@@ -19,6 +20,7 @@ typedef struct syPl {
   syVec(float) lengths;
 } syPl;
 
+/** @since 0.2.0 */
 static inline void syPlUpdate(syPl *pl) {
   float length = 0;
   pl->lengths.data[0] = 0;
@@ -27,12 +29,15 @@ static inline void syPlUpdate(syPl *pl) {
     pl->lengths.data[i] = length;
   }
 }
+
+/** @since 0.2.0 */
 static inline void syPlAddVertex(syPl *pl, vec3s v) {
   syVecPush(*pl, v);
   syVecPush(pl->lengths, 0);
   syPlUpdate(pl);
 }
 
+/** @since 0.2.0 */
 static inline void syPlInit(syPl *pl) {
   pl->len = 0;
   pl->cap = 16;
@@ -40,6 +45,7 @@ static inline void syPlInit(syPl *pl) {
   syVecInit(pl->lengths, float);
 }
 
+/** @since 0.2.0 */
 static inline void syPlDestroy(syPl *pl) {
   syVecDestroy(pl->lengths);
   free((void *)pl->data);
@@ -48,6 +54,7 @@ static inline void syPlDestroy(syPl *pl) {
 
 /**
  * Shallow copy.
+ * @since 0.2.0
  * */
 static inline syPl syPlCopy(const syPl *const pl) {
   syPl copied;
@@ -58,6 +65,7 @@ static inline syPl syPlCopy(const syPl *const pl) {
   return copied;
 }
 
+/** @since 0.2.0 */
 static inline float syPlGetLength(const syPl *const pl) {
   if (pl->len < 2) {
     return 0;
@@ -65,6 +73,7 @@ static inline float syPlGetLength(const syPl *const pl) {
   return pl->lengths.data[pl->len - 1];
 }
 
+/** @since 0.2.0 */
 static inline float syPlGetIndexAtLength(const syPl *const pl, float length) {
   if (pl->len < 2) {
     return 0.0;
@@ -102,6 +111,7 @@ static inline float syPlGetIndexAtLength(const syPl *const pl, float length) {
 
 /**
  * @param findex Interpolated index
+ * @since 0.2.0
  * */
 static inline vec3s syPlGetVertexAtIndex(const syPl *const pl, float findex) {
   size_t il = (size_t)glm_clamp(floorf(findex), 0, (float)(pl->len - 1));
@@ -112,10 +122,12 @@ static inline vec3s syPlGetVertexAtIndex(const syPl *const pl, float findex) {
   return glms_vec3_lerp(left, right, t);
 }
 
+/** @since 0.2.0 */
 static inline vec3s syPlGetVertexAtLength(const syPl *const pl, float length) {
   return syPlGetVertexAtIndex(pl, syPlGetIndexAtLength(pl, length));
 }
 
+/** @since 0.2.0 */
 static inline syPl syPlGetResampledBySpacing(const syPl *const pl,
                                              float spacing) {
   if (spacing == 0.0 || pl->len == 0) {
@@ -132,6 +144,7 @@ static inline syPl syPlGetResampledBySpacing(const syPl *const pl,
   return new;
 }
 
+/** @since 0.2.0 */
 static inline syPl syPlGetResampledByCount(const syPl *const pl, size_t count) {
   float totalLength = syPlGetLength(pl);
   size_t c = count;
@@ -146,6 +159,7 @@ static inline syPl syPlGetResampledByCount(const syPl *const pl, size_t count) {
   return syPlGetResampledBySpacing(pl, totalLength / (float)(c - 1));
 }
 
+/** @since 0.2.0 */
 static inline vec3s syPlLerp(const syPl *const pl, float t) {
   float findex = syMapRange(t, 0, 1, 0, (float)(pl->len - 1));
   return syPlGetVertexAtIndex(pl, findex);
