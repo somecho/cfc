@@ -31,7 +31,7 @@ target_include_directories(soya INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(soya INTERFACE ${SOYA_DEPENDENCIES} soya::glad)
 if(UNIX)
 target_compile_options(soya INTERFACE "$<$<CONFIG:Debug>:-g;-Wall;-Wpedantic;-D_DEBUG>")
-target_compile_options(soya INTERFACE "$<$<CONFIG:Release>:-O3;-DNDEBUG;-s;-Wall;-Wpedantic>")
+target_compile_options(soya INTERFACE "$<$<CONFIG:Release>:-O3;-DNDEBUG;>")
 endif()
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/examples)

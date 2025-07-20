@@ -128,6 +128,7 @@ static inline syPl syPlGetResampledBySpacing(const syPl *const pl,
   for (f = 0; f <= totalLength; f += spacing) {
     syPlAddVertex(&new, syPlGetVertexAtLength(pl, f));
   }
+  syPlAddVertex(&new, pl->data[pl->len - 1]);
   return new;
 }
 
