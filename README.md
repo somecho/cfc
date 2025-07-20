@@ -17,7 +17,7 @@ With CMake, you won't need to install them.
 It's somewhere in between Processing and OpenFrameworks in terms of ease of use. Go to [getting started](https://github.com/somecho/soya/wiki/Getting-Started) for more details.
 
 ```c
-#include <soya/soyalib.h>
+#include <soya/soya.h>
 
 void configure(syApp *app){
   app->width = 1000;
