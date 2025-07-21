@@ -1,26 +1,37 @@
 if(${SOYA_EXAMPLES})
 
   message(STATUS "Soya Examples will be built")
-  set(SOYA_EXAMPLE_FILES
-    basics
-    basic-drawing
-    fragment-shader
-    framebuffer
-    vectors
-    particles
-    sysl
-  )
+  set(SOYA_EXAMPLE_FILES)
+
+  if(${SOYA_CORE})
+    list(APPEND SOYA_EXAMPLE_FILES
+      basics
+      basic-drawing
+      fragment-shader
+      framebuffer
+      particles
+      sysl
+    )
+    if(NOT WIN32)
+      list(APPEND SOYA_EXAMPLE_FILES extras-pipeencoder)
+    endif()
+  endif()
+
+  list(APPEND SOYA_EXAMPLE_FILES vectors)
 
   if(NOT WIN32)
-    list(APPEND SOYA_EXAMPLE_FILES
-      extras-lockfreequeue
-      extras-pipeencoder
-    )
+    list(APPEND SOYA_EXAMPLE_FILES extras-lockfreequeue)
   endif()
 
   foreach(EXAMPLE IN ITEMS ${SOYA_EXAMPLE_FILES})
     add_executable(${EXAMPLE} ${CMAKE_CURRENT_SOURCE_DIR}/${EXAMPLE}.c)
-    target_link_libraries(${EXAMPLE} PRIVATE soya::soya)
+
+    if(${SOYA_CORE})
+      target_link_libraries(${EXAMPLE} PRIVATE soya::soya)
+    else()
+      target_link_libraries(${EXAMPLE} PRIVATE soya::lib)
+    endif()
+
     target_compile_definitions(${EXAMPLE}
       PUBLIC
       USE_CMAKE_SOYA

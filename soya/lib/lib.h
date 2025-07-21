@@ -1,5 +1,4 @@
-#ifndef _SOYA_LIB_H
-#define _SOYA_LIB_H
+#pragma once
 
 #include <soya/lib/sl.h>
 #include <soya/lib/io.h>
@@ -7,5 +6,3 @@
 #include <soya/lib/math.h>
 #include <soya/lib/color.h>
 #include <soya/lib/preprocessor.h>
-
-#endif  // _SOYA_LIB_H

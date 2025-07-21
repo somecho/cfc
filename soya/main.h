@@ -15,12 +15,12 @@
 
 void setup(syApp *app);
 #ifdef SOYA_NO_SETUP
-const void setup(syApp *app) { (void)app; }
+void setup(syApp *app) { (void)app; }
 #endif
 
 void configure(syApp *app);
 #ifdef SOYA_NO_CONFIGURE
-const void configure(syApp *app) { (void)app; }
+void configure(syApp *app) { (void)app; }
 #endif
 
 void loop(syApp *app);

@@ -10,7 +10,7 @@ if(${SOYA_TESTS})
 
   foreach(TEST IN ITEMS ${SOYA_TEST_FILES})
     add_executable(${TEST} ${CMAKE_CURRENT_SOURCE_DIR}/${TEST}.c)
-    target_link_libraries(${TEST} PRIVATE soya)
+    target_link_libraries(${TEST} PRIVATE soya_lib)
     target_compile_definitions(${TEST}
       PUBLIC
       USE_CMAKE_SOYA

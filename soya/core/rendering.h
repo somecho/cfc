@@ -6,7 +6,7 @@
 #define _SOYA_RENDERING_H
 
 #include <soya/lib/color.h>
-#include <soya/lib/gl.h>
+#include <soya/core/gl.h>
 #include <soya/core/fbo.h>
 #include <soya/core/app.h>
 #include <soya/glad/glad.h>
