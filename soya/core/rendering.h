@@ -2,8 +2,12 @@
  * @file rendering.h
  * */
 
-#ifndef _SOYA_RENDERING_H
-#define _SOYA_RENDERING_H
+/**
+ * @example basic-drawing.c
+ * @example 3d-drawing.c
+ * */
+
+#pragma once
 
 #include <soya/lib/color.h>
 #include <soya/core/gl.h>
@@ -168,9 +172,6 @@ static inline void syDrawGradientRect(syApp *app, float x, float y, float w,
   syDrawUnindexed(app, vertices, (float *)colors, 4, GL_TRIANGLE_FAN);
 }
 
-/**
- * @example 3d-drawing.c
- * */
 static inline void syDrawCube(syApp *app, float size) {
   vec3s vertices[] = {
       // Face 1
@@ -250,5 +251,3 @@ static inline void syDrawFbo(syApp *app, syFbo *fbo) {
   syEndShader(app);
 }
 /**@}*/
-
-#endif  // _SOYA_RENDERING_H

@@ -1,19 +1,9 @@
-//
-// Example: 02-basic-drawing.c
-// Description:
-// This example shows some of the basic shape drawing and transformation
-// functions in Soya.
-//
-
+#define SOYA_NO_SETUP
 #include <soya/soya.h>
 
 void configure(syApp *app) {
   app->width = 1000;
   app->height = 1000;
-}
-
-void setup(syApp *app) {
-  (void)app;  // Just to prevent the unused-parameter warning
 }
 
 void loop(syApp *app) {
