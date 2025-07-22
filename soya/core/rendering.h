@@ -15,12 +15,18 @@
 #include <soya/core/app.h>
 #include <soya/glad/glad.h>
 
+typedef struct syCube {
+  vec3s center;
+  float size;
+} syCube;
+
 /**
  * 8 vertices of a unit cube with origin at 0,0,0
  * */
-static const vec3s CUBE_BASE[8] = {
-    {-0.5, -0.5, 0.5}, {0.5, -0.5, 0.5}, {0.5, -0.5, -0.5}, {-0.5, -0.5, -0.5},
-    {-0.5, 0.5, 0.5},  {0.5, 0.5, 0.5},  {0.5, 0.5, -0.5},  {-0.5, 0.5, -0.5}};
+static const vec3s CUBE_BASE[8] = {{{-0.5, -0.5, 0.5}}, {{0.5, -0.5, 0.5}},
+                                   {{0.5, -0.5, -0.5}}, {{-0.5, -0.5, -0.5}},
+                                   {{-0.5, 0.5, 0.5}},  {{0.5, 0.5, 0.5}},
+                                   {{0.5, 0.5, -0.5}},  {{-0.5, 0.5, -0.5}}};
 
 /**
  * Indices of a cube with 12 triangles.
@@ -172,26 +178,38 @@ static inline void syDrawGradientRect(syApp *app, float x, float y, float w,
   syDrawUnindexed(app, vertices, (float *)colors, 4, GL_TRIANGLE_FAN);
 }
 
-static inline void syDrawCube(syApp *app, float size) {
+static inline void syDrawCube(syApp *app, const syCube *const cube) {
   vec3s vertices[] = {
       // Face 1
-      glms_vec3_scale(CUBE_BASE[0], size), glms_vec3_scale(CUBE_BASE[4], size),
-      glms_vec3_scale(CUBE_BASE[5], size), glms_vec3_scale(CUBE_BASE[1], size),
+      glms_vec3_add(glms_vec3_scale(CUBE_BASE[0], cube->size), cube->center),
+      glms_vec3_add(glms_vec3_scale(CUBE_BASE[4], cube->size), cube->center),
+      glms_vec3_add(glms_vec3_scale(CUBE_BASE[5], cube->size), cube->center),
+      glms_vec3_add(glms_vec3_scale(CUBE_BASE[1], cube->size), cube->center),
       // Face 2
-      glms_vec3_scale(CUBE_BASE[1], size), glms_vec3_scale(CUBE_BASE[5], size),
-      glms_vec3_scale(CUBE_BASE[6], size), glms_vec3_scale(CUBE_BASE[2], size),
+      glms_vec3_add(glms_vec3_scale(CUBE_BASE[1], cube->size), cube->center),
+      glms_vec3_add(glms_vec3_scale(CUBE_BASE[5], cube->size), cube->center),
+      glms_vec3_add(glms_vec3_scale(CUBE_BASE[6], cube->size), cube->center),
+      glms_vec3_add(glms_vec3_scale(CUBE_BASE[2], cube->size), cube->center),
       // Face 3
-      glms_vec3_scale(CUBE_BASE[2], size), glms_vec3_scale(CUBE_BASE[6], size),
-      glms_vec3_scale(CUBE_BASE[7], size), glms_vec3_scale(CUBE_BASE[3], size),
+      glms_vec3_add(glms_vec3_scale(CUBE_BASE[2], cube->size), cube->center),
+      glms_vec3_add(glms_vec3_scale(CUBE_BASE[6], cube->size), cube->center),
+      glms_vec3_add(glms_vec3_scale(CUBE_BASE[7], cube->size), cube->center),
+      glms_vec3_add(glms_vec3_scale(CUBE_BASE[3], cube->size), cube->center),
       // Face 4
-      glms_vec3_scale(CUBE_BASE[3], size), glms_vec3_scale(CUBE_BASE[7], size),
-      glms_vec3_scale(CUBE_BASE[4], size), glms_vec3_scale(CUBE_BASE[0], size),
+      glms_vec3_add(glms_vec3_scale(CUBE_BASE[3], cube->size), cube->center),
+      glms_vec3_add(glms_vec3_scale(CUBE_BASE[7], cube->size), cube->center),
+      glms_vec3_add(glms_vec3_scale(CUBE_BASE[4], cube->size), cube->center),
+      glms_vec3_add(glms_vec3_scale(CUBE_BASE[0], cube->size), cube->center),
       // Face 5
-      glms_vec3_scale(CUBE_BASE[4], size), glms_vec3_scale(CUBE_BASE[7], size),
-      glms_vec3_scale(CUBE_BASE[6], size), glms_vec3_scale(CUBE_BASE[5], size),
+      glms_vec3_add(glms_vec3_scale(CUBE_BASE[4], cube->size), cube->center),
+      glms_vec3_add(glms_vec3_scale(CUBE_BASE[7], cube->size), cube->center),
+      glms_vec3_add(glms_vec3_scale(CUBE_BASE[6], cube->size), cube->center),
+      glms_vec3_add(glms_vec3_scale(CUBE_BASE[5], cube->size), cube->center),
       // Face 6
-      glms_vec3_scale(CUBE_BASE[3], size), glms_vec3_scale(CUBE_BASE[0], size),
-      glms_vec3_scale(CUBE_BASE[1], size), glms_vec3_scale(CUBE_BASE[2], size)};
+      glms_vec3_add(glms_vec3_scale(CUBE_BASE[3], cube->size), cube->center),
+      glms_vec3_add(glms_vec3_scale(CUBE_BASE[0], cube->size), cube->center),
+      glms_vec3_add(glms_vec3_scale(CUBE_BASE[1], cube->size), cube->center),
+      glms_vec3_add(glms_vec3_scale(CUBE_BASE[2], cube->size), cube->center)};
   syDrawIndexed(app, (float *)&vertices, NULL, (uint32_t *)CUBE_INDICES, 24, 36,
                 GL_TRIANGLES);
 }
@@ -215,7 +233,7 @@ static inline void syTranslate(syApp *app, float x, float y, float z) {
 
 static inline void syScale(syApp *app, float x, float y, float z) {
   app->renderer.modelMatrix =
-      glms_scale(app->renderer.modelMatrix, (vec3s){x, y, z});
+      glms_scale(app->renderer.modelMatrix, (vec3s){{x, y, z}});
 }
 
 static inline void syRotate(syApp *app, float angle, float x, float y,

@@ -48,7 +48,7 @@ static inline bool syMainPostConfigure(syApp *app) {
   return true;
 }
 
-int main() {
+int main(void) {
   srand((unsigned)time(NULL));
   int success = -1;
 

@@ -15,10 +15,10 @@ static inline float syMapRange(float i, float a, float b, float c, float d) {
 }
 
 // @returns 0 to RAND_MAX
-static inline int syRandi() { return rand(); }
+static inline int syRandi(void) { return rand(); }
 
 // @returns 0 to 1
-static inline float syRandf() { return (float)syRandi() / (float)RAND_MAX; }
+static inline float syRandf(void) { return (float)syRandi() / (float)RAND_MAX; }
 
 static inline int syRandiRange(int lo, int hi) {
   return (int)syMapRange((float)syRandi(), (float)0, (float)RAND_MAX, (float)lo,

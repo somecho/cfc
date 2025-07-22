@@ -14,14 +14,11 @@
 
 bool consuming = false;
 
-void *consumer(void *arg)
-{
+void *consumer(void *arg) {
   syLFQ *q = arg;
-  while (consuming || atomic_load(&q->count) > 0)
-  {
+  while (consuming || atomic_load(&q->count) > 0) {
     float *f = syLFQConsume(q);
-    if (f)
-    {
+    if (f) {
       printf("CONSUMED: %f\n", *f);
       free(f);
     }
@@ -29,8 +26,7 @@ void *consumer(void *arg)
   return NULL;
 }
 
-int main()
-{
+int main(void) {
   syLFQ q;
   syLFQInit(&q);
 
@@ -39,8 +35,7 @@ int main()
   pthread_t t;
   pthread_create(&t, NULL, consumer, &q);
 
-  for (int i = 0; i < 10; i++)
-  {
+  for (int i = 0; i < 10; i++) {
     float *f = calloc(1, sizeof(float));
     *f = (float)i;
     printf("PRODUCING: %f\n", *f);

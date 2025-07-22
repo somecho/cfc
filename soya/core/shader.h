@@ -62,7 +62,7 @@ static inline GLuint syShaderProgramLoadFromSource(
   return shader;
 }
 
-static inline GLuint syShaderProgramLoadDefault() {
+static inline GLuint syShaderProgramLoadDefault(void) {
   return syShaderProgramLoadFromSource(SY_DEFAULT_FRAGMENT_SHADER,
                                        SY_DEFAULT_VERTEX_SHADER);
 }
