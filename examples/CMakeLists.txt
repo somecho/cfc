@@ -8,6 +8,7 @@ if(${SOYA_EXAMPLES})
       basics
       basic-drawing
       3d-drawing
+      callbacks
       fragment-shader
       framebuffer
       particles

@@ -1,5 +1,4 @@
-#ifndef _SOYA_MAIN_H
-#define _SOYA_MAIN_H
+#pragma once
 
 #ifndef SOYA_NO_MAIN
 
@@ -75,6 +74,8 @@ int main(void) {
   glfwSetFramebufferSizeCallback(app.window, syOnFrameBufferSize);
   glfwSetKeyCallback(app.window, syOnKey);
   glfwSetMouseButtonCallback(app.window, syOnMouseButton);
+  glfwSetCursorPosCallback(app.window, syOnMouseMoved);
+  glfwSetScrollCallback(app.window, syOnScroll);
 
   double prevTime = glfwGetTime();
   while (!glfwWindowShouldClose(app.window)) {
@@ -95,4 +96,3 @@ int main(void) {
 }
 
 #endif  // SOYA_NO_MAIN
-#endif  // _SOYA_MAIN_H

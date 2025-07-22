@@ -41,9 +41,13 @@ typedef struct syApp {
 
   syRenderer renderer;
 
-  void (*onKeyPressed)(int key);
+  void (*onKeyPress)(int key);
+  void (*onKeyRelease)(int key);
 
-  void (*onMousePressed)(int button, double x, double y);
+  void (*onMouseMove)(double x, double y);
+  void (*onMousePress)(int button, double x, double y);
+  void (*onMouseRelease)(int button, double x, double y);
+  void (*onScroll)(double x, double y);
 } syApp;
 
 static inline void syAppPreConfigure(syApp *app) {
