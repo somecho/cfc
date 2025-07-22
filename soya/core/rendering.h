@@ -213,6 +213,11 @@ static inline void syTranslate(syApp *app, float x, float y, float z) {
       glms_translate(app->renderer.modelMatrix, (vec3s){{x, y, z}});
 }
 
+static inline void syScale(syApp *app, float x, float y, float z) {
+  app->renderer.modelMatrix =
+      glms_scale(app->renderer.modelMatrix, (vec3s){x, y, z});
+}
+
 static inline void syRotate(syApp *app, float angle, float x, float y,
                             float z) {
   app->renderer.modelMatrix =
