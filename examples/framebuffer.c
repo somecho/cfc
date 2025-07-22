@@ -42,5 +42,5 @@ void loop(syApp *app) {
 
   syFboEnd();  // End drawing to the FBO
 
-  syFboDraw(app, &fbo);  // Draw the FBO to the screen
+  syDrawFbo(app, &fbo);  // Draw the FBO to the screen
 }

@@ -168,6 +168,9 @@ static inline void syDrawGradientRect(syApp *app, float x, float y, float w,
   syDrawUnindexed(app, vertices, (float *)colors, 4, GL_TRIANGLE_FAN);
 }
 
+/**
+ * @example 3d-drawing.c
+ * */
 static inline void syDrawCube(syApp *app, float size) {
   vec3s vertices[] = {
       // Face 1
@@ -239,7 +242,7 @@ static inline void syFboBegin(syFbo *fbo) {
 
 static inline void syFboEnd(void) { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
 
-static inline void syFboDraw(syApp *app, syFbo *fbo) {
+static inline void syDrawFbo(syApp *app, syFbo *fbo) {
   syBeginShader(app, fbo->shader);
   syShaderUniformTexture(fbo->shader, "tex0", fbo->texture);
   syShaderUniform2f(fbo->shader, "res", (float)app->width, (float)app->height);
