@@ -11,6 +11,30 @@
 #include <soya/core/app.h>
 #include <soya/glad/glad.h>
 
+/**
+ * 8 vertices of a unit cube with origin at 0,0,0
+ * */
+static const vec3s CUBE_BASE[8] = {
+    {-0.5, -0.5, 0.5}, {0.5, -0.5, 0.5}, {0.5, -0.5, -0.5}, {-0.5, -0.5, -0.5},
+    {-0.5, 0.5, 0.5},  {0.5, 0.5, 0.5},  {0.5, 0.5, -0.5},  {-0.5, 0.5, -0.5}};
+
+/**
+ * Indices of a cube with 12 triangles.
+ * */
+static const uint32_t CUBE_INDICES[36] = {
+    // Face 1 - Tri 1 - 2
+    0, 1, 2, 0, 2, 3,
+    // Face 2 - Tri 3 - 4
+    4, 5, 6, 4, 6, 7,
+    // Face 3 - Tri 5 - 6
+    8, 9, 10, 8, 10, 11,
+    // Face 4 - Tri 7 - 8
+    12, 13, 14, 12, 14, 15,
+    // Face 5 - Tri 9 - 10
+    16, 17, 18, 16, 18, 19,
+    // Face 6 - Tri 11 - 12
+    20, 21, 22, 20, 22, 23};
+
 /**@{*/
 static inline void syDrawUnindexed(syApp *app, float *vertices, float *colors,
                                    int n, GLenum mode) {
@@ -57,6 +81,12 @@ static inline void syDrawIndexed(syApp *app, float *vertices, float *colors,
                        colors);
   }
   syVertexAttribute4f(1);
+
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, app->renderer.ibo);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * numIndices, indices,
+               GL_DYNAMIC_DRAW);
+  syRendererSetShaderUniforms(&app->renderer, app->renderer.shader);
+  glDrawElements(mode, numIndices, GL_UNSIGNED_INT, 0);
 }
 
 /**
@@ -122,8 +152,9 @@ static inline void syDrawPolygon(syApp *app, float x, float y, float z,
 
 typedef enum { SY_VERTICAL, SY_HORIZONTAL } syOrientation;
 
-void syDrawGradientRect(syApp *app, float x, float y, float w, float h,
-                        syColor c1, syColor c2, syOrientation o) {
+static inline void syDrawGradientRect(syApp *app, float x, float y, float w,
+                                      float h, syColor c1, syColor c2,
+                                      syOrientation o) {
   float vertices[3 * 4] = {x, y, 0, x + w, y, 0, x + w, y + h, 0, x, y + h, 0};
   syColor colors[4] = {c1, c1, c2, c2};
   switch (o) {
@@ -135,6 +166,30 @@ void syDrawGradientRect(syApp *app, float x, float y, float w, float h,
       break;
   }
   syDrawUnindexed(app, vertices, (float *)colors, 4, GL_TRIANGLE_FAN);
+}
+
+static inline void syDrawCube(syApp *app, float size) {
+  vec3s vertices[] = {
+      // Face 1
+      glms_vec3_scale(CUBE_BASE[0], size), glms_vec3_scale(CUBE_BASE[4], size),
+      glms_vec3_scale(CUBE_BASE[5], size), glms_vec3_scale(CUBE_BASE[1], size),
+      // Face 2
+      glms_vec3_scale(CUBE_BASE[1], size), glms_vec3_scale(CUBE_BASE[5], size),
+      glms_vec3_scale(CUBE_BASE[6], size), glms_vec3_scale(CUBE_BASE[2], size),
+      // Face 3
+      glms_vec3_scale(CUBE_BASE[2], size), glms_vec3_scale(CUBE_BASE[6], size),
+      glms_vec3_scale(CUBE_BASE[7], size), glms_vec3_scale(CUBE_BASE[3], size),
+      // Face 4
+      glms_vec3_scale(CUBE_BASE[3], size), glms_vec3_scale(CUBE_BASE[7], size),
+      glms_vec3_scale(CUBE_BASE[4], size), glms_vec3_scale(CUBE_BASE[0], size),
+      // Face 5
+      glms_vec3_scale(CUBE_BASE[4], size), glms_vec3_scale(CUBE_BASE[7], size),
+      glms_vec3_scale(CUBE_BASE[6], size), glms_vec3_scale(CUBE_BASE[5], size),
+      // Face 6
+      glms_vec3_scale(CUBE_BASE[3], size), glms_vec3_scale(CUBE_BASE[0], size),
+      glms_vec3_scale(CUBE_BASE[1], size), glms_vec3_scale(CUBE_BASE[2], size)};
+  syDrawIndexed(app, (float *)&vertices, NULL, (uint32_t *)CUBE_INDICES, 24, 36,
+                GL_TRIANGLES);
 }
 
 /**@}*/

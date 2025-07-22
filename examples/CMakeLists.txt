@@ -7,6 +7,7 @@ if(${SOYA_EXAMPLES})
     list(APPEND SOYA_EXAMPLE_FILES
       basics
       basic-drawing
+      3d-drawing
       fragment-shader
       framebuffer
       particles
