@@ -8,9 +8,13 @@ void onMouseRelease(int button, double x, double y) {
   printf("Released: %lf %lf\n", x, y);
 }
 
-void onKeyPress(int key) { printf("Key pressed: %c\n", key); }
-
-void onKeyRelease(int key) { printf("Key released: %c\n", key); }
+void onKey(bool pressed, int key) {
+  if (pressed) {
+    printf("Key pressed: %c\n", key);
+  } else {
+    printf("Key released: %c\n", key);
+  }
+}
 
 void onMouseMove(double x, double y) { printf("Moved: %lf %lf\n", x, y); }
 
@@ -20,8 +24,7 @@ void configure(syApp *app) {
   app->onMousePress = onMousePress;
   app->onMouseRelease = onMouseRelease;
   app->onMouseMove = onMouseMove;
-  app->onKeyPress = onKeyPress;
-  app->onKeyRelease = onKeyRelease;
+  app->onKey = onKey;
   app->onScroll = onScroll;
 }
 

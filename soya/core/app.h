@@ -41,8 +41,7 @@ typedef struct syApp {
 
   syRenderer renderer;
 
-  void (*onKeyPress)(int key);
-  void (*onKeyRelease)(int key);
+  void (*onKey)(bool pressed, int key);
 
   void (*onMouseMove)(double x, double y);
   void (*onMousePress)(int button, double x, double y);

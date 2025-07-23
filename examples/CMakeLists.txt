@@ -11,6 +11,7 @@ if(${SOYA_EXAMPLES})
       callbacks
       fragment-shader
       framebuffer
+      camera
       particles
       sysl
     )

@@ -22,14 +22,14 @@ static inline void syOnKey(GLFWwindow *window, int key, int scancode,
   (void)scancode;
   (void)mods;
   if (action == GLFW_PRESS) {
-    if (app->onKeyPress != NULL) {
-      app->onKeyPress(key);
+    if (app->onKey != NULL) {
+      app->onKey(true, key);
     }
     if (key == GLFW_KEY_ESCAPE) {
       glfwSetWindowShouldClose(window, 1);
     }
-  } else if (action == GLFW_RELEASE && app->onKeyRelease != NULL) {
-    app->onKeyRelease(key);
+  } else if (action == GLFW_RELEASE && app->onKey != NULL) {
+    app->onKey(false, key);
   }
 }
 
