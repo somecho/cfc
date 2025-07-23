@@ -27,6 +27,7 @@ static inline void syRendererInit(syRenderer *r, int width, int height) {
       glms_ortho(0, (float)width, 0, (float)height, 0.1f, 100.0);
   r->viewMatrix = glms_translate_make((vec3s){{0, 0, -1}});
   r->modelMatrix = glms_mat4_identity();
+  printf("%s(): Loading default shader\n", __func__);
   r->shader = syShaderProgramLoadDefault();
   r->defaultShader = r->shader;
   glUseProgram(r->shader);

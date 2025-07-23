@@ -25,14 +25,14 @@ void configure(syApp *app) { (void)app; }
 void loop(syApp *app);
 
 static inline bool syMainPostConfigure(syApp *app) {
-  printf("GL Version: %i.%i\n", app->glVersionMajor, app->glVersionMinor);
+  printf("%s(): Using GL Version %i.%i\n", __func__, app->glVersionMajor,
+         app->glVersionMinor);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, app->glVersionMajor);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, app->glVersionMinor);
   glfwWindowHint(GLFW_SAMPLES, 8);
 
-  puts("Creating window");
+  printf("%s(): Creating %ix%i window\n", __func__, app->width, app->height);
   app->window =
-
       glfwCreateWindow(app->width, app->height, app->title, NULL, NULL);
 
   if (!app->window) {
@@ -40,7 +40,7 @@ static inline bool syMainPostConfigure(syApp *app) {
     return false;
   }
 
-  puts("Obtaining context");
+  printf("%s(): calling glfwMakeContextCurrent()\n", __func__);
   glfwMakeContextCurrent(app->window);
   gladLoadGL();
   glViewport(0, 0, app->width, app->height);
@@ -48,11 +48,14 @@ static inline bool syMainPostConfigure(syApp *app) {
 }
 
 int main(void) {
+#ifdef _DEBUG
+  printf("%s(): Configuration: DEBUG\n", __func__);
+#endif
   srand((unsigned)time(NULL));
   int success = -1;
 
   glfwSetErrorCallback(syOnError);
-  puts("Initializing GLFW");
+  printf("%s(): calling glfwInit()\n", __func__);
   if (!glfwInit()) {
     return false;
   }
@@ -64,12 +67,10 @@ int main(void) {
     return success;
   };
   syRendererInit(&app.renderer, app.width, app.height);
+  printf("%s(): Setting GL_PACK_ALIGNMENT to 2\n", __func__);
   glPixelStorei(GL_PACK_ALIGNMENT, 2);
   setup(&app);
 
-  //
-  // Callbacks
-  //
   glfwSetWindowUserPointer(app.window, (void *)&app);
   glfwSetFramebufferSizeCallback(app.window, syOnFrameBufferSize);
   glfwSetKeyCallback(app.window, syOnKey);
@@ -77,6 +78,7 @@ int main(void) {
   glfwSetCursorPosCallback(app.window, syOnMouseMoved);
   glfwSetScrollCallback(app.window, syOnScroll);
 
+  printf("%s(): Beginning main loop...\n", __func__);
   double prevTime = glfwGetTime();
   while (!glfwWindowShouldClose(app.window)) {
     loop(&app);
@@ -86,8 +88,14 @@ int main(void) {
     app.time = glfwGetTime();
     app.fps = 1.f / (float)(app.time - prevTime);
     prevTime = app.time;
-  };
-  // CLEAN UP
+  }
+
+  printf("%s(): Main loop exited\n", __func__);
+  if (app.onExit != NULL) {
+    printf("%s(): Calling onExit()\n", __func__);
+    app.onExit();
+  }
+  printf("%s(): Cleaning up resources\n", __func__);
   glDeleteBuffers(1, &app.renderer.vbo);
   glDeleteBuffers(1, &app.renderer.cbo);
   glDeleteBuffers(1, &app.renderer.ibo);

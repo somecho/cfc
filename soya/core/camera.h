@@ -26,6 +26,11 @@ static inline void syCameraInit(syCamera *cam, vec3s pos, vec3s target,
   cam->view = glms_lookat(pos, target, up);
   cam->mouse.prevX = 0, cam->mouse.prevY = 0;
   cam->mode = SY_CAMERA_FIRST_PERSON;
+#ifdef _DEBUG
+  puts(
+      "syCameraInit(): call syCameraOnMouseMove() and syCameraOnKey() in your "
+      "callbacks to enable first-person movement.");
+#endif
 }
 static inline void syCameraOnMouseMove(syCamera *cam, double x, double y) {
   if (cam->mouse.prevX == 0) {
@@ -65,8 +70,17 @@ static inline void syCameraOnKey(syCamera *cam, bool pressed, int key) {
   }
 }
 
+static inline float syGetAspect(const syApp *const app) {
+  return (float)app->width / (float)app->height;
+}
+
+static inline mat4s syGetDefaultPerspective(const syApp *const app) {
+  return glms_perspective_default(syGetAspect(app));
+}
+
 static inline void syCameraUpdate(syApp *app, syCamera *cam) {
   app->renderer.viewMatrix = cam->view;
+  app->renderer.projectionMatrix = syGetDefaultPerspective(app);
   vec3s right = glms_vec3_normalize(glms_vec3_cross(cam->dir, cam->up));
   float moveSpeed = 0.01;
   if (cam->wdown) {
@@ -88,12 +102,4 @@ static inline void syCameraUpdate(syApp *app, syCamera *cam) {
     cam->pos = glms_vec3_add(cam->pos, glms_vec3_scale(cam->up, -moveSpeed));
   }
   cam->view = glms_lookat(cam->pos, glms_vec3_add(cam->pos, cam->dir), cam->up);
-}
-
-static inline float syGetAspect(const syApp *const app) {
-  return (float)app->width / (float)app->height;
-}
-
-static inline mat4s syGetDefaultPerspective(const syApp *const app) {
-  return glms_perspective_default(syGetAspect(app));
 }

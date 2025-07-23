@@ -1,5 +1,4 @@
-#ifndef _SOYA_APP_H
-#define _SOYA_APP_H
+#pragma once
 
 #include <stdint.h>
 
@@ -47,6 +46,7 @@ typedef struct syApp {
   void (*onMousePress)(int button, double x, double y);
   void (*onMouseRelease)(int button, double x, double y);
   void (*onScroll)(double x, double y);
+  void (*onExit)(void);
 } syApp;
 
 static inline void syAppPreConfigure(syApp *app) {
@@ -58,4 +58,7 @@ static inline void syAppPreConfigure(syApp *app) {
   app->glVersionMinor = SY_DEFAULT_GL_VERSION_MINOR;
 }
 
-#endif  // _SOYA_APP_H
+static inline void syAppDisableCursor(const syApp *const app) {
+  glfwSetInputMode(app->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+  glfwSetInputMode(app->window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+}

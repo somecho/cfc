@@ -9,11 +9,9 @@ void onKey(bool pressed, int key) { syCameraOnKey(&cam, pressed, key); }
 
 void setup(syApp *app) {
   syCameraInit(&cam, (vec3s){{5, 5, -5}}, GLMS_VEC3_ZERO, (vec3s){{0, 1, 0}});
-  app->renderer.projectionMatrix = syGetDefaultPerspective(app);
   app->onMouseMove = onMouseMove;
   app->onKey = onKey;
-  glfwSetInputMode(app->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-  glfwSetInputMode(app->window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+  syAppDisableCursor(app);
 }
 
 void loop(syApp *app) {
