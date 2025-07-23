@@ -10,6 +10,7 @@
 #pragma once
 
 #include <soya/lib/color.h>
+#include <soya/lib/vec.h>
 #include <soya/core/gl.h>
 #include <soya/core/fbo.h>
 #include <soya/core/app.h>
@@ -19,6 +20,12 @@ typedef struct syCube {
   vec3s center;
   float size;
 } syCube;
+
+typedef struct sySphere {
+  vec3s center;
+  float radius;
+  uint32_t resolution;
+} sySphere;
 
 /**
  * 8 vertices of a unit cube with origin at 0,0,0
@@ -212,6 +219,37 @@ static inline void syDrawCube(syApp *app, const syCube *const cube) {
       glms_vec3_add(glms_vec3_scale(CUBE_BASE[2], cube->size), cube->center)};
   syDrawIndexed(app, (float *)&vertices, NULL, (uint32_t *)CUBE_INDICES, 24, 36,
                 GL_TRIANGLES);
+}
+static inline void syDrawSphere(syApp *app, const sySphere *const s) {
+  syVec(vec3s) vertices;
+  syVec(uint32_t) indices;
+  syVecInit(vertices, vec3s);
+  syVecInit(indices, uint32_t);
+  int res = s->resolution > 0 ? s->resolution : 32;
+  for (int y = 0; y < res; y++) {
+    float phi = GLM_PIf * 2.0 * (float)(y + 1) / (float)res;
+    for (int x = 0; x < res; x++) {
+      float theta = GLM_PIf * 2.0 * (float)(x) / (float)res;
+      vec3s p = {{sinf(phi) * cosf(theta) + s->center.x,
+                  cosf(phi) + s->center.y,
+                  sinf(phi) * sin(theta) + s->center.z}};
+      syVecPush(vertices, p);
+    }
+  }
+  for (int y = 0; y < res - 1; y++) {
+    for (int x = 0; x < res; x++) {
+      float i0 = (y * res) + x;
+      float i1 = (y * res) + ((x + 1) % res);
+      float i2 = ((y + 1) * res) + x;
+      float i3 = ((y + 1) * res) + ((x + 1) % res);
+      syVecPush3(indices, i0, i1, i2);
+      syVecPush3(indices, i1, i2, i3);
+    }
+  }
+  syDrawIndexed(app, (float *)vertices.data, NULL, indices.data, vertices.len,
+                indices.len, GL_TRIANGLES);
+  syVecDestroy(vertices);
+  syVecDestroy(indices);
 }
 
 /**@}*/

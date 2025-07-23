@@ -42,8 +42,10 @@ static inline bool syMainPostConfigure(syApp *app) {
 
   printf("%s(): calling glfwMakeContextCurrent()\n", __func__);
   glfwMakeContextCurrent(app->window);
+  glfwSwapInterval(1);
   gladLoadGL();
   glViewport(0, 0, app->width, app->height);
+  glEnable(GL_DEPTH_TEST);
   return true;
 }
 

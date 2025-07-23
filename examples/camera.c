@@ -18,5 +18,6 @@ void loop(syApp *app) {
   syCameraUpdate(app, &cam);
   syClear(SY_BLACK);
   sySetColor(app, SY_MAGENTA);
-  syDrawCube(app, &(syCube){.size = 1});
+  syDrawCube(app, &(syCube){.size = 1, .center = (vec3s){{0, 0.5, 0}}});
+  syDrawSphere(app, &(sySphere){.radius = 1, .center = (vec3s){{4, 1, 0}}});
 }

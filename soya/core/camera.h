@@ -82,12 +82,14 @@ static inline void syCameraUpdate(syApp *app, syCamera *cam) {
   app->renderer.viewMatrix = cam->view;
   app->renderer.projectionMatrix = syGetDefaultPerspective(app);
   vec3s right = glms_vec3_normalize(glms_vec3_cross(cam->dir, cam->up));
-  float moveSpeed = 0.01;
+  float moveSpeed = 0.1;
   if (cam->wdown) {
-    cam->pos = glms_vec3_add(cam->pos, glms_vec3_scale(cam->dir, moveSpeed));
+    cam->pos =
+        glms_vec3_add(cam->pos, glms_vec3_scale(cam->dir, moveSpeed * 0.25));
   }
   if (cam->sdown) {
-    cam->pos = glms_vec3_add(cam->pos, glms_vec3_scale(cam->dir, -moveSpeed));
+    cam->pos =
+        glms_vec3_add(cam->pos, glms_vec3_scale(cam->dir, -moveSpeed * 0.25));
   }
   if (cam->adown) {
     cam->pos = glms_vec3_add(cam->pos, glms_vec3_scale(right, -moveSpeed));
