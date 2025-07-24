@@ -19,8 +19,7 @@
  * @include vectors.c
  * */
 
-#ifndef _SOYA_VEC_H
-#define _SOYA_VEC_H
+#pragma once
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -174,6 +173,26 @@
  * */
 #define syVecSizeb(v) (v).len == 0 ? 0 : sizeof(v.data[0]) * (v).len
 
+/**
+ * Shorthand for an indexed for loop.
+ * @param v The vector to be iterated over
+ * @param i The identifier used for the index
+ *
+ * Example:
+ * ```
+ * SY_VEC_FOREACH(numbers, i){
+ *   sum += numbers[i];
+ * }
+ *
+ * ```
+ * @since 0.1.0
+ * */
 #define SY_VEC_FOREACH(v, i) for (size_t i = 0; i < (v).len; i++)
 
-#endif  // _SOYA_VEC_H
+// TODO
+// - syVecDelete
+// - syVecLast
+// - syVecFirst
+// - syVecPop
+// - syVecGet
+// - assert initialization in push in debug mode
