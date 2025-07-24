@@ -1,13 +1,26 @@
-#ifndef _SOYA_IO_H
-#define _SOYA_IO_H
+/**
+ * @file io.h
+ * @brief IO related utilities
+ * */
+
+#pragma once
 
 #include <stdio.h>
 #include <stdlib.h>
 
-static inline const char *syReadFile(char *filePath) {
+/**
+ * @param filePath The path of the file to be read. This is relative to the
+ * current working directory of the calling process.
+ *
+ * @returns a `char *` buffer that the caller of this function now owns and is
+ * responsible of freeing.
+ *
+ * @since 0.1.0
+ * */
+static inline char *syReadFile(const char *const filePath) {
   FILE *file = fopen(filePath, "rb");
   if (!file) {
-    perror("Failed to open file");
+    perror("syReadFile(): Failed to open file");
     return NULL;
   }
 
@@ -15,15 +28,13 @@ static inline const char *syReadFile(char *filePath) {
   long fileSize = ftell(file);
   rewind(file);
   if (fileSize < 0) {
-    perror("Failed to determine file size");
+    perror("syReadFile(): Failed to determine file size");
     return NULL;
   }
 
   char *buffer = (char *)calloc((size_t)fileSize + 1, sizeof(char));
   size_t bytesRead = fread(buffer, 1, (size_t)fileSize, file);
-  buffer[bytesRead] = '\0';  // Null-terminate
+  buffer[bytesRead] = '\0';
   fclose(file);
   return buffer;
 }
-
-#endif  // _SOYA_IO_H
