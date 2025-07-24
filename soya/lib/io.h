@@ -12,8 +12,9 @@
  * @param filePath The path of the file to be read. This is relative to the
  * current working directory of the calling process.
  *
- * @returns a `char *` buffer that the caller of this function now owns and is
- * responsible of freeing.
+ * @returns A `char *` buffer that the caller of this function now owns and is
+ * responsible of freeing. `NULL` if the function fails opening the file or
+ * determining the filesize.
  *
  * @since 0.1.0
  * */

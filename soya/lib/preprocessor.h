@@ -1,5 +1,9 @@
-#ifndef _SOYA_PREPROCESSOR_H
-#define _SOYA_PREPROCESSOR_H
+/**
+ * @file preprocessor.h
+ * @brief Include directive preprocessing
+ * */
+
+#pragma once
 
 #include <stddef.h>
 #include <stdio.h>
@@ -232,5 +236,3 @@ static inline int syPreprocess(char *filepath, char **buf) {
   free(state.workingDir);
   return state.error;
 }
-
-#endif  // _SOYA_PREPROCESSOR_H
