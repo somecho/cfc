@@ -25,6 +25,9 @@ endif()
 
 add_library(soya_lib ${CMAKE_CURRENT_SOURCE_DIR}/soya/lib/lib.c)
 target_include_directories(soya_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+if(NOT WIN32)
+  target_link_libraries(soya_lib PUBLIC m)
+endif()
 add_library(soya::lib ALIAS soya_lib)
 
 if(${SOYA_CORE})
