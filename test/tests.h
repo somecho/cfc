@@ -10,6 +10,7 @@ TESTS {
 
   REGISTER(color_syRgb)
   REGISTER(color_conversions)
+  REGISTER(color_with_alpha)
   REGISTER(vec_push3)
 
 };

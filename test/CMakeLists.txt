@@ -5,7 +5,6 @@ if(${SOYA_TESTS})
 
   set(SOYA_TEST_FILES
     preprocessor
-    vec
     runner
   )
 
