@@ -2,5 +2,16 @@
 
 #include "common.h"
 #include "test_color.h"
+#include "test_vec.h"
 
-TESTS{REGISTER(color_syRgb) REGISTER(color_conversions)};
+// clang-format off
+
+TESTS {
+
+  REGISTER(color_syRgb)
+  REGISTER(color_conversions)
+  REGISTER(vec_push3)
+
+};
+
+// clang-format on
