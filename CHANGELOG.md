@@ -1,5 +1,28 @@
 # Changelog
 
+# 0.3.0
+- CMake
+  - New option `SOYA_CORE`. When `ON`, builds entire Soya as a framework. When `OFF`, builds only the libs so that Soya can be used as a library without dependencies.
+- Examples
+  - [3d-drawing][3d-eg]
+  - [callbacks][callbacks-eg]
+  - [camera][cam-eg]
+- Features
+  - More callbacks: `onMousePress`, `onMouseRelease`, `onMouseMove`, `onExit`
+  - New functions: `syAppDisableCursor`
+  - [First person camera][first-person-cam]
+  - 3D Drawing: `syCube`, `sySphere`, `syDrawCube`, `syDrawSphere`
+- Improvements
+  - Logging
+- Breaking Changes
+  - Renamed `syFboDraw` to `syDrawFbo`
+  - Renamed `onKeyPressed` callback to `onKey`
+
+[3d-eg]:./examples/3d-drawing.c
+[callbacks-eg]:./examples/callbacks.c
+[cam-eg]:./examples/camera.c
+[first-person-cam]:./soya/core/camera.h
+
 # 0.2.0
 
 - added doxyfile

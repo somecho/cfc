@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.11)
 
 project(soya
-  VERSION 0.2.0
+  VERSION 0.3.0
   DESCRIPTION "Creative Coding in C"
   HOMEPAGE_URL https://github.com/somecho/soya
   LANGUAGES C
