@@ -57,6 +57,10 @@ typedef struct syColor {
 #define SY_RED (syColor){{1}, {0}, {0}, 1}
 #define SY_WHITE (syColor){{1}, {1}, {1}, 1}
 #define SY_YELLOW (syColor){{1}, {1}, {0}, 1}
+#define SY_CRIMSON (syColor){{0.8633}, {0.082}, {0.2383}, 1}
+#define SY_MAROON (syColor){{0.502}, {0}, {0}, 1}
+#define SY_DARKGREEN (syColor){{0}, {0.3921}, {0}, 1}
+#define SY_DEEPPINK (syColor){{1}, {0.082}, {0.5781}, 1}
 
 /**
  * Creates a @ref syColor to hold RGBA values.
